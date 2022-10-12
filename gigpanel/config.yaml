@@ -1,0 +1,12 @@
+prefixes:
+  cloud: '/mnt/Data/'
+stores:
+  sheets:
+    prefix: cloud
+    path: 'sheets/fakebooks/splitted/'
+    suffix: '.pdf'
+
+defaultStore: sheets
+webClient:
+  addr: '192.168.1.1'
+  secure: False
