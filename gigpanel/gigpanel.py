@@ -20,9 +20,11 @@ def parse_args(self):
     app.parser = QCommandLineParser()
     app.parser.setApplicationDescription("Gig Panel");
     app.parser.addHelpOption();
+    app.option_use_simulator = QCommandLineOption("s", "Use emulator")
     app.option_fullscreen = QCommandLineOption("f", "Show fullscreen")
-    app.option_edit_splitpoints = QCommandLineOption("s", "Edit splitpoints")
+    app.option_edit_splitpoints = QCommandLineOption("e", "Edit splitpoints")
     app.option_edit_bounding_box = QCommandLineOption("b", "Edit bounding box")
+    app.parser.addOption(app.option_use_simulator)
     app.parser.addOption(app.option_fullscreen)
     app.parser.addOption(app.option_edit_splitpoints)
     app.parser.addOption(app.option_edit_bounding_box)
@@ -56,9 +58,10 @@ async def main():
     app.w = GigPanelWindow()
     app.gp = app.w.centralWidget()
     app.pc = PlaylistClient(app.gp.playlist.livelist_client_cb, *(lambda c: (c['addr'], c['secure']))(app.config['webClient']))
-    app.oc = GigPanelOSCClient(app.gp, (lambda c: (c['addr'], c['port']))(app.config['oscClient']))
+    #app.oc = GigPanelOSCClient(app.gp, (lambda c: (c['addr'], c['port']))(app.config['oscClient']))
 
     app.w.show()
+    app.midibox.connect()
 
     loop, future = init_loop(app)
     try:
@@ -77,18 +80,27 @@ async def main():
     app.gp.playlist.load(pl)
 
     try:
-        app.oc.start()
+        #app.oc.start()
         asyncio.ensure_future(app.pc.get_messages())
         await future
     except:
         raise
     finally:
-        app.oc.stop()
+        #app.oc.stop()
+        pass
 
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     try:
-        qasync.run(main())
+        if sys.version_info.major == 3 and sys.version_info.minor == 11:
+            with qasync._set_event_loop_policy(qasync.DefaultQEventLoopPolicy()):
+                runner = asyncio.runners.Runner()
+                try:
+                    runner.run(main())
+                finally:
+                    runner.close()
+        else:
+            qasync.run(main())
     except asyncio.exceptions.CancelledError:
         sys.exit(0)

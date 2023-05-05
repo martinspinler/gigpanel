@@ -530,7 +530,11 @@ class GigPanelWindow(QMainWindow):
         self.setCentralWidget(self.gp)
         self.dw = QDockWidget()
 
-        view = MidiboxQuickWidget(app)
+
+        midibox_params = {'port_name': 'XIAO nRF52840'}
+        if app.parser.isSet(app.option_use_simulator):
+            midibox_params = {'port_name': 'Control', 'client_name': 'GigPanel', 'virtual': True, 'find': False, 'debug': True}
+        view = MidiboxQuickWidget(app, midibox_params=midibox_params)
 
         app.midibox = view.midibox
         app.midibox._callbacks.append(self.midicb)
