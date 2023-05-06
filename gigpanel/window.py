@@ -20,6 +20,7 @@ from PyQt5.QtGui import QFontMetrics, QFont, QImage, QPixmap, QIcon, QPaintEvent
 from PyQt5.QtCore import Qt, QSize, QPoint, QUrl, QFile, QTimer, QItemSelectionModel, QRect, QRegExp, QIODevice, QCommandLineParser, QCommandLineOption
 
 from PyQt5.QtCore import QPropertyAnimation, QParallelAnimationGroup, QPoint, QAbstractAnimation
+from PyQt5.QtCore import QSettings
 
 from midibox import MidiboxQuickWidget
 
@@ -548,6 +549,16 @@ class GigPanelWindow(QMainWindow):
         self.dw.setWidget(hw)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw)
 
+        self.setObjectName("gigpanel window")
+
+        settings = QSettings("cz.spinler", "gigpanel")
+        g = settings.value("geometry")
+        if g:
+            self.restoreGeometry(g)
+        ws = settings.value("windowState")
+        if ws:
+            self.restoreState(ws.toByteArray())
+
         if app.parser.isSet(app.option_fullscreen):
             self.setWindowState(Qt.WindowFullScreen)
 
@@ -558,3 +569,10 @@ class GigPanelWindow(QMainWindow):
                 self.gp.playlist.gp.document.next_page()
             if msg.is_cc(16) and msg.value > 64:
                 self.gp.playlist.gp.document.prev_page()
+
+    def closeEvent(self, event):
+        settings = QSettings("cz.spinler", "gigpanel")
+        if not app.parser.isSet(app.option_fullscreen):
+            settings.setValue("geometry", self.saveGeometry())
+        #settings.setValue("windowState", self.saveState())
+        super().closeEvent(event)
