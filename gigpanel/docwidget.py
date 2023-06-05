@@ -31,8 +31,6 @@ class DocumentWidget(QLabel):
         elif app.parser.isSet(app.option_edit_bounding_box):
             self.mode = self.MODE_SET_BOUNDING_BOX
 
-        #self.resizeEvent.connect(self.on_resize)
-
     def loadSong(self, song):
         doc = popplerqt5.Poppler.Document
         self.sect = 0
@@ -213,9 +211,9 @@ class DocumentWidget(QLabel):
                      QPoint(find_nonwhite_row(arr_col, True),
                             find_nonwhite_row(arr_row, True)))
 
-    #def resizeEvent(self, re):
-    #    super().resizeEvent(re)
-    #    self.loadPage(self.page_index, updateG = False)
+    def onResize(self, re):
+        self.setFixedSize(re)
+        self.loadPage(self.page_index)
 
     def next_page(self):
         #if len(self.page_splitpoints) > self.page_splitindex:
@@ -230,3 +228,7 @@ class DocumentWidget(QLabel):
             self.page_splitindex = 0
             self.loadPage(self.page_index - 1)
 
+class DocumentWidgetScrollArea(QScrollArea):
+    def resizeEvent(self, ev):
+        super(QScrollArea, self).resizeEvent(ev)
+        self.document.onResize(self.size())

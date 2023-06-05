@@ -1,6 +1,12 @@
 <!DOCTYPE patchbay>
-<patchbay name="patchbay" version="0.9.10">
+<patchbay name="qjackctl_patchbay" version="0.9.10">
  <output-sockets>
+  <socket client="Roland\ FP\ Series" exclusive="off" name="RolandFP" type="alsa-midi">
+   <plug>Roland\ FP\ Series\ MIDI\ 1</plug>
+  </socket>
+  <socket client="MidiboxSimulator" exclusive="off" name="MidiboxSimulatorPiano" type="alsa-midi">
+   <plug>Piano_output</plug>
+  </socket>
   <socket client="MidiboxSimulator" exclusive="off" name="MidiboxSimulator" type="alsa-midi">
    <plug>Control_output</plug>
   </socket>
@@ -15,6 +21,9 @@
   </socket>
  </output-sockets>
  <input-sockets>
+  <socket client="Roland\ FP\ Series" exclusive="off" name="RolandFP" type="alsa-midi">
+   <plug>Roland\ FP\ Series\ MIDI\ 1</plug>
+  </socket>
   <socket client="MidiboxSimulator" exclusive="off" name="MidiboxSimulator control input" type="alsa-midi">
    <plug>Control_input</plug>
   </socket>
@@ -35,10 +44,12 @@
  <cables>
   <cable input="aseqdump" output="MidiboxSimulator" type="alsa-midi"/>
   <cable input="GigPanel" output="MidiboxSimulator" type="alsa-midi"/>
-  <cable input="aseqdump" output="Virtual RawMIDI" type="alsa-midi"/>
   <cable input="MidiboxSimulator control input" output="GigPanel" type="alsa-midi"/>
   <cable input="MidiboxSimulator piano input" output="MidiTest" type="alsa-midi"/>
   <cable input="aseqdump" output="MidiTest" type="alsa-midi"/>
+  <cable input="aseqdump" output="Virtual RawMIDI" type="alsa-midi"/>
+  <cable input="MidiboxSimulator piano input" output="RolandFP" type="alsa-midi"/>
+  <cable input="RolandFP" output="MidiboxSimulatorPiano" type="alsa-midi"/>
  </cables>
 </patchbay>
 

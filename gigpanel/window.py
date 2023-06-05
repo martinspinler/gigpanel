@@ -12,7 +12,7 @@ import ssl
 
 
 #import warnings
-from docwidget import DocumentWidget
+from docwidget import DocumentWidget, DocumentWidgetScrollArea
 
 from PyQt5.QtWidgets import QFileDialog, QDialog, QApplication, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QFormLayout, QComboBox, QToolButton, QPushButton, QInputDialog, QLineEdit, QLabel, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QTreeWidget, QTreeWidgetItem, QSizePolicy, QMenu, QAction, QFrame, QLabel, QAbstractItemView, QMessageBox, QStackedLayout, QListWidget, QListWidgetItem, QFileIconProvider, QGridLayout, QSizePolicy, QDockWidget, QScrollArea, QAbstractScrollArea, QLayout, QTabBar
 from PyQt5.QtQuickWidgets import QQuickWidget
@@ -459,7 +459,8 @@ class GigPanelWidget(QWidget):
 
         self.document = DocumentWidget(self, app)
         #l.addWidget(self.document)
-        sa = QScrollArea()
+        sa = DocumentWidgetScrollArea()
+        sa.document = self.document
         sa.setWidget(self.document)
         sa.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         sa.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -532,13 +533,14 @@ class GigPanelWindow(QMainWindow):
         self.dw = QDockWidget()
 
 
-        midibox_params = {'port_name': 'XIAO nRF52840'}
+        midibox_params = {'port_name': 'Midibox XIAO BLE'}
         if app.parser.isSet(app.option_use_simulator):
             midibox_params = {'port_name': 'Control', 'client_name': 'GigPanel', 'virtual': True, 'find': False, 'debug': True}
         view = MidiboxQuickWidget(app, midibox_params=midibox_params)
 
         app.midibox = view.midibox
         app.midibox._callbacks.append(self.midicb)
+        app.mbview = view
 
         hw = HidableTabPanel()
 

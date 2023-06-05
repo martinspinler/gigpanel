@@ -114,7 +114,7 @@ class PlaylistClient():
         await self.ws.send_str(f"client:{msg}:" + json.JSONEncoder().encode(data))
 
     async def get_messages(self):
-        req = True
+        req = True if hasattr(self, 'ws') else False
         while req:
             req, data = await self._receive_msg(None)
             if req in ['add', 'delete', 'update', 'play']:
