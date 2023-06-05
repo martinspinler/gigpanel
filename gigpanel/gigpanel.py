@@ -74,7 +74,6 @@ async def main():
         pl = {}
         pl['items'] = {}
         pass
-        raise
 
     app.gp.loadSongs(app.songs)
     app.gp.playlist.load(pl)
