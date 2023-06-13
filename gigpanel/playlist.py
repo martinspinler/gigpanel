@@ -134,6 +134,7 @@ class PlaylistClient():
         _, data = await self._receive_msg('songlist')
         j = data
         j = {int(k):v for k,v in j.items()}
+        j = {k:v for k, v in j.items() if v['band'] == 1}
         [j[k].update({'id':k}) for k in j.keys()]
         return j
 

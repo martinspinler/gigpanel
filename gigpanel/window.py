@@ -322,7 +322,7 @@ class PlaylistWidget(QWidget):
         #l.setStretch(0, 1)
 
         l = QVBoxLayout()
-        if app.horizontal:
+        if app.horizontal and False:
             #l = QVBoxLayout()
             l.addWidget(self.playlist)
         else:
@@ -356,16 +356,12 @@ class PlaylistWidget(QWidget):
 
     def load(self, playlist):
         self.playlist.clear()
-        #x = self.playlist.takeItem(self.playlist.row(item))
-        #del x
 
         for songItem in playlist["items"]:
             songId = songItem['songId']
             try:
-                #song = [x for x in self.gp.db['Songs'] if x['name'] == name][0]
                 song = app.songs[songId]
             except:
-                #print("Cant find playlist song:", name)
                 print("Cant find playlist song:", songItem)
             else:
                 self.playlist.addItem(PlaylistItem(song, songItem))
@@ -374,14 +370,11 @@ class PlaylistWidget(QWidget):
         item = self.playlist.items_by_id[pli['id']]
         x = self.playlist.setCurrentRow(self.playlist.row(item))
 
-        #self.playlist.setCurrentRow(self.playlist.currentRow() + 1)
-        pass
     def next(self, ch):
         app.pc.playlist_item_set(1, True)
+
     def prev(self, ch):
         app.pc.playlist_item_set(-1, True)
-
-        #self.playlist.setCurrentRow(self.playlist.currentRow() + 1)
 
     def insert(self, ch):
         d = SongListDialog(self.gp).get_songs()
@@ -402,7 +395,6 @@ class PlaylistWidget(QWidget):
 
     def delete(self):
         app.pc.playlist_item_del(self.playlist.currentItem().id)
-
 
     def client_add(self, pli):
         song = self.gp.songs[pli['songId']]
@@ -452,13 +444,11 @@ class GigPanelWidget(QWidget):
         w = QWidget()
         w.setLayout(l)
         self.stacked_layout.setCurrentIndex(0)
-        #self.stacked_layout.addWidget(w)
 
         l.setSpacing(0)
         l.setContentsMargins(0, 0, 0, 0)
 
         self.document = DocumentWidget(self, app)
-        #l.addWidget(self.document)
         sa = DocumentWidgetScrollArea()
         sa.document = self.document
         sa.setWidget(self.document)
@@ -466,35 +456,18 @@ class GigPanelWidget(QWidget):
         sa.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         sa.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
         sa.setWidgetResizable(True)
-        #self.stacked_layout.addWidget(self.document)
 
-        #self.stacked_layout.addWidget(self.hw)
         self.stacked_layout.addWidget(sa)
 
         v = QVBoxLayout()
         l.addLayout(v)
 
-        #self.loadDb()
-
-        #self.song_list = SongListWidget(self.db)
-        #self.stacked_layout.addWidget(self.song_list)
         self.stacked_layout.setCurrentIndex(1)
         self.playlist = PlaylistWidget(self)
-        #self.playlist.setFixedSize(800, 800)
-        #self.stacked_layout.addWidget(self.playlist)
 
-        #self.playlist.setAlignment(Qt.AlignBottom | Qt.AlignLeft);
         self.stacked_layout.setCurrentIndex(0)
 
-        #self.db = {}
         self.songs = {}
-
-        #v.addWidget(self.playlist)
-
-        #self.stacked_layout.setCurrentIndex(2)
-        #self.stacked_layout.addWidget(self.hw)
-        #self.stacked_layout.setCurrentIndex(0)
-
 
     def loadSong(self, song):
         if 'filename' in song and song['filename']:
@@ -531,6 +504,7 @@ class GigPanelWindow(QMainWindow):
         self.gp = GigPanelWidget(self)
         self.setCentralWidget(self.gp)
         self.dw = QDockWidget()
+        self.dw.setFeatures(QDockWidget.NoDockWidgetFeatures)
 
 
         midibox_params = {'port_name': 'Midibox XIAO BLE'}
@@ -543,7 +517,6 @@ class GigPanelWindow(QMainWindow):
         app.mbview = view
 
         hw = HidableTabPanel()
-
         hw.addTab("Hide", HidableTabWidget(QWidget()))
         hw.addTab("Playlist", self.gp.playlist)
         hw.addTab("Midibox", view)
@@ -566,11 +539,10 @@ class GigPanelWindow(QMainWindow):
 
     def midicb(self, msg):
         if msg.type == 'control_change':
-            #help(msg)
-            if msg.is_cc(17) and msg.value > 64:
-                self.gp.playlist.gp.document.next_page()
             if msg.is_cc(16) and msg.value > 64:
                 self.gp.playlist.gp.document.prev_page()
+            if msg.is_cc(17) and msg.value > 64:
+                self.gp.playlist.gp.document.next_page()
 
     def closeEvent(self, event):
         settings = QSettings("cz.spinler", "gigpanel")

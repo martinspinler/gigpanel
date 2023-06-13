@@ -5,6 +5,7 @@ import functools
 import signal
 import yaml
 import qasync
+import pathlib
 #from asyncqt import QEventLoop
 
 from PyQt5.QtCore import QCommandLineParser, QCommandLineOption
@@ -54,7 +55,7 @@ async def main():
     parse_args(app)
     window.set_style(app)
 
-    app.config = yaml.load(open('config.yaml', 'r').read(), yaml.Loader)
+    app.config = yaml.load(open((pathlib.Path(__file__).parent / 'config.yaml').resolve(), 'r').read(), yaml.Loader)
     app.w = GigPanelWindow()
     app.gp = app.w.centralWidget()
     app.pc = PlaylistClient(app.gp.playlist.livelist_client_cb, *(lambda c: (c['addr'], c['secure']))(app.config['webClient']))
