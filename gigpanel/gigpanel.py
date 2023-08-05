@@ -67,6 +67,7 @@ async def main():
     except:
         pass
 
+    app.mbview.qbox.layers[0].pedalsChange.emit()
 
     loop, future = init_loop(app)
     try:
