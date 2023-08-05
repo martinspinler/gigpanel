@@ -59,6 +59,10 @@ def set_style(self):
             DocumentWidget {{{style_fs(doc_w, doc_h)} border-color:red; border-width:2px; border-style:solid;}}
             """
 
+    style += " QPushButton#tempoButton{background-color: yellow; font: 64px;}"
+    style += " QPushButton#tempoButton1{background-color: yellow; font: 64px;}"
+    style += " QPushButton#tempoButton:checked{background-color: blue;}"
+    style += " QPushButton#tempoButton1:checked{background-color: red;}"
     app.setStyleSheet(style);
 
 def song_update_path(song):
@@ -109,6 +113,7 @@ class HidableTabWidget(QScrollArea):
 
         self.contentArea = contentArea
         self.toggleAnimation = toggleAnimation
+
 
 class HidableTabPanel(QWidget):
     def __init__(self, title=""):
@@ -419,9 +424,15 @@ class PlaylistWidget(QWidget):
     def current_item_changed(self, ci, pi):
         if ci:
             self.gp.loadSong(ci.song)
+            app.tempo.setTempo(ci.song.get('bpm'))
 
     def livelist_client_cb(self, cmd, data):
-        requests = {'add': self.client_add, 'delete': self.client_del, 'update': self.load, 'play': self.play}
+        requests = {
+            'add': self.client_add,
+            'delete': self.client_del,
+            'update': self.load,
+            'play': self.play
+        }
         if cmd in requests:
             requests[cmd](data)
         else:
@@ -496,6 +507,52 @@ class GigPanelWidget(QWidget):
 #
 #        #self.loadSongs()
 
+class TempoWidget(QWidget):
+    def __init__(self):
+        QWidget.__init__(self)
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.tempoTimeout)
+        self.timer.setTimerType(Qt.TimerType.PreciseTimer)
+
+        self.tempoBtns = []
+        l = QHBoxLayout()
+        self.tempoText = QLabel()
+        l.addWidget(self.tempoText)
+        l.setStretchFactor(self.tempoText, 1)
+
+        for i in range(4):
+            btn = QPushButton(str(i+1))
+            l.addWidget(btn)
+            btn.setEnabled(False)
+            self.tempoBtns.append(btn)
+            btn.setObjectName("tempoButton" + ("" if i else "1"))
+            btn.setAutoFillBackground(False)
+            btn.setCheckable(True)
+            l.setStretchFactor(btn, 4)
+        self.setLayout(l)
+
+    def setTempo(self, bpm):
+        if bpm:
+            self.timer.start()
+            self.timer.setInterval(60000 // bpm)
+            self.tempoText.setText(str(bpm))
+        else:
+            self.timer.stop()
+            self.tempoText.setText("")
+
+    def tempoTimeout(self, *args):
+        st = None
+        for i in range(len(self.tempoBtns)):
+            if self.tempoBtns[i].isChecked():
+                st = i
+
+        if st is None:
+            self.tempoBtns[0].setChecked(True)
+        else:
+            self.tempoBtns[st].setChecked(False)
+            self.tempoBtns[((st+1) % len(self.tempoBtns))].setChecked(True)
+
 
 class GigPanelWindow(QMainWindow):
     def __init__(self):
@@ -516,8 +573,22 @@ class GigPanelWindow(QMainWindow):
         app.midibox._callbacks.append(self.midicb)
         app.mbview = view
 
+        app.tempo = TempoWidget()
+
+        l = QHBoxLayout()
+        l.addWidget(app.tempo)
+        l.setStretch(0, 1)
+
+        btn = QPushButton("Next")
+        btn.clicked.connect(lambda x: app.pc.playlist_item_set(off=+1))
+        l.addWidget(btn)
+
+        w = QWidget()
+        w.setLayout(l)
+
         hw = HidableTabPanel()
         hw.addTab("Hide", HidableTabWidget(QWidget()))
+        hw.addTab("Tempo", w)
         hw.addTab("Playlist", self.gp.playlist)
         hw.addTab("Midibox", view)
 
