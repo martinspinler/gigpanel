@@ -62,7 +62,11 @@ async def main():
     #app.oc = GigPanelOSCClient(app.gp, (lambda c: (c['addr'], c['port']))(app.config['oscClient']))
 
     app.w.show()
-    app.midibox.connect()
+    try:
+        app.midibox.connect()
+    except:
+        pass
+
 
     loop, future = init_loop(app)
     try:
