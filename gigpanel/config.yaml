@@ -1,12 +1,35 @@
 prefixes:
-  cloud: '/mnt/Data/'
+  cloud: '~/cloud/data/'
+  docs: '~/Documents/sheets/'
 stores:
   sheets:
     prefix: cloud
     path: 'sheets/fakebooks/splitted/'
     suffix: '.pdf'
+  pt:
+    prefix: cloud
+    path: 'bands/Perfect Time/scores/'
+    suffix: '.pdf'
+  ptInstr:
+    prefix: cloud
+    path: 'bands/Perfect Time/scores/'
+    suffix: '-Piano.pdf'
+  sk:
+    prefix: docs
+    path: 'sk/drums/'
+    suffix: '.pdf'
 
-defaultStore: sheets
-webClient:
-  addr: '192.168.1.1'
-  secure: False
+defaultStore: pt
+defaultPlaylistClient: ptlocal
+
+playlistClients:
+  ptlocal:
+    currentBand: 3
+    addr: '127.0.0.1:8012'
+    secure: False
+    playlist: 'http://127.0.0.1:8012/band/perfecttime'
+  sklocal:
+    currentBand: 3
+    addr: '127.0.0.1:8012'
+    secure: False
+    playlist: 'http://127.0.0.1:8012/band/swingkong'
