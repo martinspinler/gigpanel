@@ -5,7 +5,7 @@ import aiohttp
 import ssl
 
 class PlaylistClient():
-    def __init__(self, widget, addr, secure = False, prefix = ''):
+    def __init__(self, widget, addr, secure = False, prefix = '', currentBand=1):
         self._prefix = prefix
         self.addr = addr
         #self.w = widget
@@ -13,7 +13,7 @@ class PlaylistClient():
         self._s = "s" if secure else ""
         self._queue = asyncio.Queue()
         self.currentPlaylistId = 8
-        self.currentBand = 1
+        self.currentBand = currentBand
 
     async def _receive_msg(self, msgid):
         i = 0
@@ -134,7 +134,7 @@ class PlaylistClient():
         _, data = await self._receive_msg('songlist')
         j = data
         j = {int(k):v for k,v in j.items()}
-        j = {k:v for k, v in j.items() if v['band'] == 1}
+        j = {k:v for k, v in j.items() if v['band'] == self.currentBand}
         [j[k].update({'id':k}) for k in j.keys()]
         return j
 

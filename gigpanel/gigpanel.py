@@ -56,9 +56,12 @@ async def main():
     window.set_style(app)
 
     app.config = yaml.load(open((pathlib.Path(__file__).parent / 'config.yaml').resolve(), 'r').read(), yaml.Loader)
-    app.w = GigPanelWindow()
+
+    playlistClient = app.config['defaultPlaylistClient']
+    pcConfig = app.config['playlistClients'][playlistClient]
+    app.w = GigPanelWindow(pcConfig)
     app.gp = app.w.centralWidget()
-    app.pc = PlaylistClient(app.gp.playlist.livelist_client_cb, *(lambda c: (c['addr'], c['secure']))(app.config['webClient']))
+    app.pc = PlaylistClient(app.gp.playlist.livelist_client_cb, *(lambda c: (c['addr'], c['secure']))(pcConfig), currentBand=pcConfig['currentBand'])
     #app.oc = GigPanelOSCClient(app.gp, (lambda c: (c['addr'], c['port']))(app.config['oscClient']))
 
     app.w.show()

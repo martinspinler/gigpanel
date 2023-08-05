@@ -130,7 +130,7 @@ class HidableTabPanel(QWidget):
         self.tb = tabBar
 
         self.ci = 0
-        self.content = [] 
+        self.content = []
 
         tabBar.currentChanged.connect(self.on_tab_changed)
 
@@ -555,7 +555,7 @@ class TempoWidget(QWidget):
 
 
 class GigPanelWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, pcConfig):
         QMainWindow.__init__(self)
         self.setWindowTitle('Gig panel')
         self.gp = GigPanelWidget(self)
@@ -567,7 +567,9 @@ class GigPanelWindow(QMainWindow):
         midibox_params = {'port_name': 'Midibox XIAO BLE'}
         if app.parser.isSet(app.option_use_simulator):
             midibox_params = {'port_name': 'Control', 'client_name': 'GigPanel', 'virtual': True, 'find': False, 'debug': True}
-        view = MidiboxQuickWidget(app, midibox_params=midibox_params)
+        view = MidiboxQuickWidget(app, midibox_params=midibox_params,
+                **({'playlist_url': pcConfig['playlist']} if pcConfig.get('playlist') else {})
+            )
 
         app.midibox = view.midibox
         app.midibox._callbacks.append(self.midicb)
