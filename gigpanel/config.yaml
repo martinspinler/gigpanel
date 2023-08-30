@@ -9,11 +9,8 @@ stores:
   pt:
     prefix: cloud
     path: 'bands/Perfect Time/scores/'
+    pattern: 'bands/Perfect Time/scores/{name}/{name}{instrument}.pdf'
     suffix: '.pdf'
-  ptInstr:
-    prefix: cloud
-    path: 'bands/Perfect Time/scores/'
-    suffix: '-Piano.pdf'
   sk:
     prefix: docs
     path: 'sk/drums/'
@@ -24,7 +21,7 @@ defaultPlaylistClient: ptlocal
 
 playlistClients:
   ptlocal:
-    currentBand: 3
+    currentBand: 1
     addr: '127.0.0.1:8012'
     secure: False
     playlist: 'http://127.0.0.1:8012/band/perfecttime'
