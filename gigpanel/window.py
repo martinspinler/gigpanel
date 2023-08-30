@@ -66,11 +66,24 @@ def set_style(self):
     app.setStyleSheet(style);
 
 def song_update_path(song):
+    store = app.config['stores'][song['store']] if ('store' in song and song['store'] != None) else app.config['stores'][app.config['defaultStore']]
+
     if 'file' in song and song['file'] != None:
-        store = app.config['stores'][song['store']] if ('store' in song and song['store'] != None) else app.config['stores'][app.config['defaultStore']]
         song['filename'] = app.config['prefixes'][store['prefix']] + store['path'] + song['file'] + store['suffix']
     elif 'filename' not in song:
         song['filename'] = None
+
+    if (song['filename'] is None or not QFile(song['filename']).exists()) and 'pattern' in store:
+        for fn in ([song['file']] if 'file' in song else []) + [song['name']]:
+            for instrument in ['-Piano', '-Electric_Piano', '']:
+                filename = app.config['prefixes'][store['prefix']] + store['pattern'].format(name=fn, instrument=instrument)
+                if QFile(filename).exists():
+                    song['filename'] = filename
+                    break
+            else:
+                continue
+            break
+
 
 class PlaylistItem(QListWidgetItem):
     def __init__(self, song, pli):
