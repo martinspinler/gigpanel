@@ -12,7 +12,7 @@ import ssl
 
 
 #import warnings
-from docwidget import DocumentWidget, DocumentWidgetScrollArea
+from .docwidget import DocumentWidget, DocumentWidgetScrollArea
 
 from PyQt5.QtWidgets import QFileDialog, QDialog, QApplication, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QFormLayout, QComboBox, QToolButton, QPushButton, QInputDialog, QLineEdit, QLabel, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QTreeWidget, QTreeWidgetItem, QSizePolicy, QMenu, QAction, QFrame, QLabel, QAbstractItemView, QMessageBox, QStackedLayout, QListWidget, QListWidgetItem, QFileIconProvider, QGridLayout, QSizePolicy, QDockWidget, QScrollArea, QAbstractScrollArea, QLayout, QTabBar
 from PyQt5.QtQuickWidgets import QQuickWidget
@@ -75,7 +75,7 @@ def song_update_path(song):
 
     if (song['filename'] is None or not QFile(song['filename']).exists()) and 'pattern' in store:
         for fn in ([song['file']] if 'file' in song else []) + [song['name']]:
-            for instrument in ['-Piano', '-Electric_Piano', '']:
+            for instrument in ['-Piano', ' - Piano', '-Electric_Piano', '']:
                 filename = app.config['prefixes'][store['prefix']] + store['pattern'].format(name=fn, instrument=instrument)
                 if QFile(filename).exists():
                     song['filename'] = filename
@@ -579,7 +579,7 @@ class GigPanelWindow(QMainWindow):
 
         midibox_params = {'port_name': 'Midibox XIAO BLE'}
         if app.parser.isSet(app.option_use_simulator):
-            midibox_params = {'port_name': 'Control', 'client_name': 'GigPanel', 'virtual': True, 'find': False, 'debug': True}
+            midibox_params = {'port_name': 'MidiboxSim', 'virtual': True, 'find': True, 'debug': True}
         view = MidiboxQuickWidget(app, midibox_params=midibox_params,
                 **({'playlist_url': pcConfig['playlist']} if pcConfig.get('playlist') else {})
             )
@@ -587,6 +587,7 @@ class GigPanelWindow(QMainWindow):
         app.midibox = view.midibox
         app.midibox._callbacks.append(self.midicb)
         app.mbview = view
+        self.mbview = view
 
         app.tempo = TempoWidget()
 
@@ -623,12 +624,16 @@ class GigPanelWindow(QMainWindow):
         if app.parser.isSet(app.option_fullscreen):
             self.setWindowState(Qt.WindowFullScreen)
 
+        self.midibox = app.midibox
+
     def midicb(self, msg):
         if msg.type == 'control_change':
             if msg.is_cc(16) and msg.value > 64:
                 self.gp.playlist.gp.document.prev_page()
             if msg.is_cc(17) and msg.value > 64:
                 self.gp.playlist.gp.document.next_page()
+            if msg.is_cc(18) and msg.value > 64:
+                self.mbview.qmidibox.transpositionExtra = not self.mbview.qmidibox.transpositionExtra
 
     def closeEvent(self, event):
         settings = QSettings("cz.spinler", "gigpanel")
