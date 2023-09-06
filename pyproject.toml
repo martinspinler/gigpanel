@@ -1,0 +1,15 @@
+[project]
+name = "gigpanel"
+version = "1.0.0"
+dependencies = [
+	"qasync",
+	"aiohttp",
+	"mido",
+	"python-dispatch"
+]
+
+[project.scripts]
+gigpanel = "gigpanel.__main__:main"
+
+[tool.setuptools]
+packages = ["gigpanel"]

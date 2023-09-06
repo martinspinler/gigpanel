@@ -11,10 +11,10 @@ import pathlib
 from PyQt5.QtCore import QCommandLineParser, QCommandLineOption
 from PyQt5.QtWidgets import QApplication
 
-import window
-from window import GigPanelWindow
-from playlist import PlaylistClient
-from gposcclient import GigPanelOSCClient
+from . import window
+from .window import GigPanelWindow
+from .playlist import PlaylistClient
+from .gposcclient import GigPanelOSCClient
 
 def parse_args(self):
     app = self
@@ -38,6 +38,8 @@ def init_loop(app):
 
     def close_future(future, loop):
         app.pc.disconnect()
+        app.midibox.disconnect()
+
         #loop.call_later(0.1, future.cancel)
         future.cancel()
 
@@ -47,7 +49,7 @@ def init_loop(app):
     return loop, future
 
 
-async def main():
+async def _main():
     global app
     app = QApplication.instance()
     window.app = app
@@ -70,7 +72,6 @@ async def main():
     except:
         pass
 
-    app.mbview.qbox.layers[0].pedalsChange.emit()
 
     loop, future = init_loop(app)
     try:
@@ -98,17 +99,20 @@ async def main():
         pass
 
 
-if __name__ == "__main__":
+def main():
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     try:
         if sys.version_info.major == 3 and sys.version_info.minor == 11:
             with qasync._set_event_loop_policy(qasync.DefaultQEventLoopPolicy()):
                 runner = asyncio.runners.Runner()
                 try:
-                    runner.run(main())
+                    runner.run(_main())
                 finally:
                     runner.close()
         else:
-            qasync.run(main())
+            qasync.run(_main())
     except asyncio.exceptions.CancelledError:
         sys.exit(0)
+
+if __name__ == "__main__":
+    main()
