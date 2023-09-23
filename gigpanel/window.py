@@ -87,7 +87,12 @@ def song_update_path(song):
 
 class PlaylistItem(QListWidgetItem):
     def __init__(self, song, pli):
-        QListWidgetItem.__init__(self, song['name'])
+        if song.get('user_id'):
+            name = str(song.get('user_id')) + " - " + song['name']
+        else:
+            name = song['name']
+
+        QListWidgetItem.__init__(self, name)
         self.song = song
         [setattr(self, a, pli[a]) for a in ['id']]
 
