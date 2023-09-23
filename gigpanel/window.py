@@ -75,7 +75,7 @@ def song_update_path(song):
 
     if (song['filename'] is None or not QFile(song['filename']).exists()) and 'pattern' in store:
         for fn in ([song['file']] if 'file' in song and song['file'] else []) + [song['name']]:
-            for instrument in ['-Piano', ' - Piano', '-Electric_Piano', '']:
+            for instrument in ['-Piano', ' - Piano', '-Electric_Piano', ' Piano', '']:
                 filename = app.config['prefixes'][store['prefix']] + store['pattern'].format(name=fn, instrument=instrument)
                 if QFile(filename).exists():
                     song['filename'] = filename
