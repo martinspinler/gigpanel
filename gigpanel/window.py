@@ -608,11 +608,12 @@ class GigPanelWindow(QMainWindow):
         w.setLayout(l)
 
         hw = HidableTabPanel()
-        hw.addTab("Hide", HidableTabWidget(QWidget()))
+        #hw.addTab("Hide", HidableTabWidget(QWidget()))
         hw.addTab("Tempo", w)
         hw.addTab("Playlist", self.gp.playlist)
         hw.addTab("Midibox", view)
 
+        self.hw = hw
         self.dw.setWidget(hw)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw)
 
@@ -631,6 +632,16 @@ class GigPanelWindow(QMainWindow):
 
         self.midibox = app.midibox
 
+        self.gp.document.setClickCallback(self.onDocumentClick)
+
+    def onDocumentClick(self, pos, size):
+        visible = self.dwIsVisible()
+        if visible or pos.y() > int(size.height() * 0.9):
+            self.dwSetVisible(not visible, 2 if pos.x() > self.width() // 2 else 1)
+            return True
+        else:
+            return False
+
     def midicb(self, msg):
         if msg.type == 'control_change':
             if msg.is_cc(16) and msg.value > 64:
@@ -646,3 +657,9 @@ class GigPanelWindow(QMainWindow):
             settings.setValue("geometry", self.saveGeometry())
         #settings.setValue("windowState", self.saveState())
         super().closeEvent(event)
+
+    def dwSetVisible(self, v: bool, index = 1):
+        self.hw.tb.setCurrentIndex(index if v else 0)
+
+    def dwIsVisible(self):
+        return self.hw.tb.currentIndex() > 0
