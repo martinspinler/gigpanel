@@ -1,5 +1,0 @@
-python-osc
-aiohttp
-mido
-python-dispatch
-qasync

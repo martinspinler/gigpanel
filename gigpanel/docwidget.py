@@ -31,6 +31,8 @@ class DocumentWidget(QLabel):
         elif app.parser.isSet(app.option_edit_bounding_box):
             self.mode = self.MODE_SET_BOUNDING_BOX
 
+        self._click_callback = None
+
     def loadSong(self, song):
         doc = popplerqt5.Poppler.Document
         self.sect = 0
@@ -83,8 +85,9 @@ class DocumentWidget(QLabel):
             self.bb = []
 
     def mousePressEvent(self, e):
-        x = int(e.localPos().x())
-        y = int(e.localPos().y())
+        pos = e.localPos()
+        x = int(pos.x())
+        y = int(pos.y())
         if self.mode == self.MODE_SET_SPLITPOINTS:
             if 'Pages' not in self.song:
                 self.song['Pages'] = []
@@ -98,10 +101,8 @@ class DocumentWidget(QLabel):
             self.bb = [x, y]
             self.loadPage(self.page_index)
         elif self.mode == self.MODE_NORMAL:
-            if e.localPos().y() > int(self.height() * 0.9):
-                self.gp.wnd.dw.setVisible(not self.gp.wnd.dw.isVisible())
-            else:
-                if e.localPos().x() > self.width() // 2:
+            if self._click_callback and not self._click_callback(pos, self.size()):
+                if pos.x() > self.width() // 2:
                     self.next_page()
                 else:
                     self.prev_page()
@@ -184,6 +185,9 @@ class DocumentWidget(QLabel):
 
 
         self.setPixmap(pixmap)
+
+    def setClickCallback(self, cb):
+        self._click_callback = cb
 
     #def sizeHint(self):
     #    if self.page:
