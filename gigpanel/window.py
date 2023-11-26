@@ -14,7 +14,7 @@ import ssl
 #import warnings
 from .widgets import DocumentWidget, DocumentWidgetScrollArea
 from .widgets import SongListDialog, PlaylistWidget
-from .widgets import HidableTabPanel
+from .widgets import HidableTabPanel, TabTempoWidget
 
 from PyQt5.QtWidgets import QFileDialog, QDialog, QApplication, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QFormLayout, QComboBox, QToolButton, QPushButton, QInputDialog, QLineEdit, QLabel, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QTreeWidget, QTreeWidgetItem, QSizePolicy, QMenu, QAction, QFrame, QLabel, QAbstractItemView, QMessageBox, QStackedLayout, QListWidget, QListWidgetItem, QFileIconProvider, QGridLayout, QSizePolicy, QDockWidget, QScrollArea, QAbstractScrollArea, QLayout, QTabBar
 from PyQt5.QtQuickWidgets import QQuickWidget
@@ -88,8 +88,6 @@ def song_update_path(song):
             break
 
 
-
-
 class GigPanelWidget(QWidget):
     def __init__(self, wnd):
         QWidget.__init__(self)
@@ -158,51 +156,6 @@ class GigPanelWidget(QWidget):
 #
 #        #self.loadSongs()
 
-class TempoWidget(QWidget):
-    def __init__(self):
-        QWidget.__init__(self)
-
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.tempoTimeout)
-        self.timer.setTimerType(Qt.TimerType.PreciseTimer)
-
-        self.tempoBtns = []
-        l = QHBoxLayout()
-        self.tempoText = QLabel()
-        l.addWidget(self.tempoText)
-        l.setStretchFactor(self.tempoText, 1)
-
-        for i in range(4):
-            btn = QPushButton(str(i+1))
-            l.addWidget(btn)
-            btn.setEnabled(False)
-            self.tempoBtns.append(btn)
-            btn.setObjectName("tempoButton" + ("" if i else "1"))
-            btn.setAutoFillBackground(False)
-            btn.setCheckable(True)
-            l.setStretchFactor(btn, 4)
-        self.setLayout(l)
-
-    def setTempo(self, bpm):
-        if bpm:
-            self.timer.start()
-            self.timer.setInterval(60000 // bpm)
-            self.tempoText.setText(str(bpm))
-        else:
-            self.timer.stop()
-            self.tempoText.setText("")
-
-    def tempoTimeout(self, *args):
-        st = None
-        for i in range(len(self.tempoBtns)):
-            if self.tempoBtns[i].isChecked():
-                st = i
-
-        if st is None:
-            self.tempoBtns[0].setChecked(True)
-        else:
-            self.tempoBtns[st].setChecked(False)
-            self.tempoBtns[((st+1) % len(self.tempoBtns))].setChecked(True)
 
 
 class GigPanelWindow(QMainWindow):
@@ -213,7 +166,6 @@ class GigPanelWindow(QMainWindow):
         self.setCentralWidget(self.gp)
         self.dw = QDockWidget()
         self.dw.setFeatures(QDockWidget.NoDockWidgetFeatures)
-
 
         midibox_params = {'port_name': 'Midibox XIAO BLE'}
         if app.parser.isSet(app.option_use_simulator):
@@ -227,22 +179,11 @@ class GigPanelWindow(QMainWindow):
         app.mbview = view
         self.mbview = view
 
-        app.tempo = TempoWidget()
-
-        l = QHBoxLayout()
-        l.addWidget(app.tempo)
-        l.setStretch(0, 1)
-
-        btn = QPushButton("Next")
-        btn.clicked.connect(lambda x: app.pc.playlist_item_set(off=+1))
-        l.addWidget(btn)
-
-        w = QWidget()
-        w.setLayout(l)
-
+        self.tab_tempo = TabTempoWidget()
+        app.tempo = self.tab_tempo.tempo
         hw = HidableTabPanel()
         #hw.addTab("Hide", HidableTabWidget(QWidget()))
-        hw.addTab("Tempo", w)
+        hw.addTab("Tempo", self.tab_tempo)
         hw.addTab("Playlist", self.gp.playlist)
         hw.addTab("Midibox", view)
 
