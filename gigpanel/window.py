@@ -166,20 +166,23 @@ class GigPanelWindow(QMainWindow):
         QMainWindow.__init__(self)
         self.setWindowTitle('Gig panel')
         self.app = app
+
         self.gp = GigPanelWidget(self, app)
         self.setCentralWidget(self.gp)
-        self.dw = QDockWidget()
-        self.dw.setFeatures(QDockWidget.NoDockWidgetFeatures)
+
+        self.gp.document.setClickCallback(self.onDocumentClick)
 
         midibox_params = {'port_name': 'Midibox XIAO BLE'}
         midibox_params['debug'] = True
         if app.parser.isSet(app.option_use_simulator):
             midibox_params = {'port_name': 'MidiboxSim', 'virtual': True, 'find': True, 'debug': True}
+
         view = MidiboxQuickWidget(app, midibox_params=midibox_params,
                 **({'playlist_url': pcConfig['playlist']} if pcConfig.get('playlist') else {})
             )
 
         app.midibox = view.midibox
+        self.midibox = app.midibox
         app.midibox._callbacks.append(self.midicb)
         app.mbview = view
         self.mbview = view
@@ -193,6 +196,9 @@ class GigPanelWindow(QMainWindow):
         hw.addTab("Midibox", view)
 
         self.hw = hw
+
+        self.dw = QDockWidget()
+        self.dw.setFeatures(QDockWidget.NoDockWidgetFeatures)
         self.dw.setWidget(hw)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw)
 
@@ -208,10 +214,6 @@ class GigPanelWindow(QMainWindow):
 
         if app.parser.isSet(app.option_fullscreen):
             self.setWindowState(Qt.WindowFullScreen)
-
-        self.midibox = app.midibox
-
-        self.gp.document.setClickCallback(self.onDocumentClick)
 
     def onDocumentClick(self, pos, size):
         visible = self.dwIsVisible()
