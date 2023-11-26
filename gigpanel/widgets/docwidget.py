@@ -15,7 +15,7 @@ class DocumentWidget(QLabel):
         QLabel.__init__(self, gp)
         self.setObjectName("DocumentWidget")
         self.gp = gp
-        
+
         self.setAlignment(Qt.AlignTop | Qt.AlignLeft);
         self.document = None
         self.page = None

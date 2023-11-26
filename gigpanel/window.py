@@ -12,7 +12,7 @@ import ssl
 
 
 #import warnings
-from .docwidget import DocumentWidget, DocumentWidgetScrollArea
+from .widgets import DocumentWidget, DocumentWidgetScrollArea
 
 from PyQt5.QtWidgets import QFileDialog, QDialog, QApplication, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QFormLayout, QComboBox, QToolButton, QPushButton, QInputDialog, QLineEdit, QLabel, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QTreeWidget, QTreeWidgetItem, QSizePolicy, QMenu, QAction, QFrame, QLabel, QAbstractItemView, QMessageBox, QStackedLayout, QListWidget, QListWidgetItem, QFileIconProvider, QGridLayout, QSizePolicy, QDockWidget, QScrollArea, QAbstractScrollArea, QLayout, QTabBar
 from PyQt5.QtQuickWidgets import QQuickWidget
