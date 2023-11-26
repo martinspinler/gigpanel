@@ -64,6 +64,8 @@ async def _main():
     app.w = GigPanelWindow(pcConfig)
     app.gp = app.w.centralWidget()
     app.pc = PlaylistClient(app.gp.playlist.livelist_client_cb, *(lambda c: (c['addr'], c['secure']))(pcConfig), currentBand=pcConfig['currentBand'])
+
+    app.w.tab_tempo.btn_next.clicked.connect(lambda x: app.pc.playlist_item_set(off=+1))
     #app.oc = GigPanelOSCClient(app.gp, (lambda c: (c['addr'], c['port']))(app.config['oscClient']))
 
     app.w.show()
