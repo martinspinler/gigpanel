@@ -11,10 +11,10 @@ import pathlib
 from PyQt5.QtCore import QCommandLineParser, QCommandLineOption
 from PyQt5.QtWidgets import QApplication
 
-from . import window
 from .window import GigPanelWindow
 from .playlist import PlaylistClient
 from .gposcclient import GigPanelOSCClient
+
 
 def parse_args(self):
     app = self
@@ -39,8 +39,6 @@ def init_loop(app):
     def close_future(future, loop):
         app.pc.disconnect()
         app.midibox.disconnect()
-
-        #loop.call_later(0.1, future.cancel)
         future.cancel()
 
     if hasattr(app, "aboutToQuit"):
@@ -52,43 +50,37 @@ def init_loop(app):
 async def _main():
     global app
     app = QApplication.instance()
-    window.app = app
-
     parse_args(app)
-    window.set_style(app)
 
     app.config = yaml.load(open((pathlib.Path(__file__).parent / 'config.yaml').resolve(), 'r').read(), yaml.Loader)
 
-    playlistClient = app.config['defaultPlaylistClient']
-    pcConfig = app.config['playlistClients'][playlistClient]
-    app.w = GigPanelWindow(pcConfig)
-    app.gp = app.w.centralWidget()
-    app.pc = PlaylistClient(app.gp.playlist.livelist_client_cb, *(lambda c: (c['addr'], c['secure']))(pcConfig), currentBand=pcConfig['currentBand'])
+    pcConfig = app.config['playlistClients'][app.config['defaultPlaylistClient']]
+    window = GigPanelWindow(pcConfig, app)
+    gigpanel = window.gp
+    app.pc = PlaylistClient(gigpanel.playlist.livelist_client_cb, *(lambda c: (c['addr'], c['secure']))(pcConfig), currentBand=pcConfig['currentBand'])
 
-    app.w.tab_tempo.btn_next.clicked.connect(lambda x: app.pc.playlist_item_set(off=+1))
-    #app.oc = GigPanelOSCClient(app.gp, (lambda c: (c['addr'], c['port']))(app.config['oscClient']))
+    window.tab_tempo.btn_next.clicked.connect(lambda x: app.pc.playlist_item_set(off=+1))
+    #app.oc = GigPanelOSCClient(gigpanel, (lambda c: (c['addr'], c['port']))(app.config['oscClient']))
 
-    app.w.show()
+    window.show()
     try:
         app.midibox.connect()
-    except:
-        pass
+    except Exception as e:
+        print(e)
 
+    songs = {}
+    pl = {'items': {}}
 
     loop, future = init_loop(app)
     try:
         await app.pc.connect()
-        app.songs = await app.pc.get_db()
+        songs = await app.pc.get_db()
         pl = await app.pc.get_playlist()
     except Exception as e:
         print(e)
-        app.songs = {}
-        pl = {}
-        pl['items'] = {}
-        pass
 
-    app.gp.loadSongs(app.songs)
-    app.gp.playlist.load(pl)
+    gigpanel.loadSongs(songs)
+    gigpanel.playlist.load(pl)
 
     try:
         #app.oc.start()

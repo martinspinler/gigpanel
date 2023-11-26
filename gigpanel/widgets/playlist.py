@@ -20,8 +20,6 @@ class QListWidgetWithId(QListWidget):
         return x
 
 
-
-
 class PlaylistItem(QListWidgetItem):
     def __init__(self, song, pli):
         if song.get('user_id'):
@@ -35,7 +33,7 @@ class PlaylistItem(QListWidgetItem):
 
 
 class PlaylistWidget(QWidget):
-    def __init__(self, gp, app):
+    def __init__(self, gp, app, window):
         QWidget.__init__(self)
         self.app = app
         self.gp = gp
@@ -79,7 +77,7 @@ class PlaylistWidget(QWidget):
         #addButton("Store db", self.gp.storeDb)
         addButton("Hide", lambda x: self.gp.wnd.dw.setVisible(False))
 
-        addButton("Exit", lambda x: self.app.w.close())
+        addButton("Exit", lambda x: window.close())
 
     def load(self, playlist):
         self.playlist.clear()
@@ -87,7 +85,7 @@ class PlaylistWidget(QWidget):
         for songItem in playlist["items"]:
             songId = songItem['songId']
             try:
-                song = self.app.songs[songId]
+                song = self.gp.songs[songId]
             except:
                 print("Cant find playlist song:", songItem)
             else:
@@ -96,12 +94,6 @@ class PlaylistWidget(QWidget):
     def play(self, pli):
         item = self.playlist.items_by_id[pli['id']]
         x = self.playlist.setCurrentRow(self.playlist.row(item))
-
-    def next(self, ch):
-        self.app.pc.playlist_item_set(1, True)
-
-    def prev(self, ch):
-        self.app.pc.playlist_item_set(-1, True)
 
     def insert(self, ch):
         d = SongListDialog(self.gp, self.app).get_songs()
@@ -159,4 +151,3 @@ class PlaylistWidget(QWidget):
             requests[cmd](data)
         else:
             print("Playlist: unhandled cmd", cmd)
-

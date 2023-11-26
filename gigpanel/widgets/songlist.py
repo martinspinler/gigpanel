@@ -67,7 +67,7 @@ class SongListDialog(QDialog):
         h.addLayout(v)
         #self.setLayout(v)
 
-        self.songlist = SongListWidget(app.songs)
+        self.songlist = SongListWidget(gp.songs)
         #self.songlist = SongListWidget(None)
         v.addWidget(self.songlist)
         g = QGridLayout()

@@ -27,8 +27,7 @@ from PyQt5.QtCore import QSettings
 from midibox import MidiboxQuickWidget
 
 
-def set_style(self):
-    app = self
+def set_style(app):
     style_fs = lambda w, h: (f"min-width:{w}px;max-width:{w}px;" if w != None else "") + (f"min-height:{h}px;max-height:{h}px;" if h != None else "")
     style_fs2 = lambda w, h: (f"max-width:{w}px;" if w != None else "") + (f"max-height:{h}px;" if h != None else "")
     style = ""
@@ -68,7 +67,8 @@ def set_style(self):
     style += " QPushButton#tempoButton1:checked{background-color: red;}"
     app.setStyleSheet(style);
 
-def song_update_path(song):
+
+def song_update_path(song, app):
     store = app.config['stores'][song['store']] if ('store' in song and song['store'] != None) else app.config['stores'][app.config['defaultStore']]
 
     if 'file' in song and song['file'] != None:
@@ -89,8 +89,9 @@ def song_update_path(song):
 
 
 class GigPanelWidget(QWidget):
-    def __init__(self, wnd):
+    def __init__(self, wnd, app):
         QWidget.__init__(self)
+        self.app = app
         self.wnd = wnd
 
         self.ext_input_cb = []
@@ -123,7 +124,7 @@ class GigPanelWidget(QWidget):
         l.addLayout(v)
 
         self.stacked_layout.setCurrentIndex(1)
-        self.playlist = PlaylistWidget(self, app)
+        self.playlist = PlaylistWidget(self, app, self.wnd)
 
         self.stacked_layout.setCurrentIndex(0)
 
@@ -136,7 +137,7 @@ class GigPanelWidget(QWidget):
     def loadSongs(self, songs):
         self.songs = songs
         for song in songs.values():
-            song_update_path(song)
+            song_update_path(song, self.app)
 
     def storeDb(self):
         pass
@@ -159,15 +160,19 @@ class GigPanelWidget(QWidget):
 
 
 class GigPanelWindow(QMainWindow):
-    def __init__(self, pcConfig):
+    def __init__(self, pcConfig, app):
+        set_style(app)
+
         QMainWindow.__init__(self)
         self.setWindowTitle('Gig panel')
-        self.gp = GigPanelWidget(self)
+        self.app = app
+        self.gp = GigPanelWidget(self, app)
         self.setCentralWidget(self.gp)
         self.dw = QDockWidget()
         self.dw.setFeatures(QDockWidget.NoDockWidgetFeatures)
 
         midibox_params = {'port_name': 'Midibox XIAO BLE'}
+        midibox_params['debug'] = True
         if app.parser.isSet(app.option_use_simulator):
             midibox_params = {'port_name': 'MidiboxSim', 'virtual': True, 'find': True, 'debug': True}
         view = MidiboxQuickWidget(app, midibox_params=midibox_params,
@@ -227,7 +232,7 @@ class GigPanelWindow(QMainWindow):
 
     def closeEvent(self, event):
         settings = QSettings("cz.spinler", "gigpanel")
-        if not app.parser.isSet(app.option_fullscreen):
+        if not self.app.parser.isSet(self.app.option_fullscreen):
             settings.setValue("geometry", self.saveGeometry())
         #settings.setValue("windowState", self.saveState())
         super().closeEvent(event)
