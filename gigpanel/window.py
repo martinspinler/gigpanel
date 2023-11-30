@@ -25,6 +25,8 @@ from PyQt5.QtCore import QPropertyAnimation, QParallelAnimationGroup, QPoint, QA
 from PyQt5.QtCore import QSettings
 
 from midibox import MidiboxQuickWidget
+from midibox.controller import Midibox
+from midibox.osc.client import OscMidibox
 
 
 def set_style(app):
@@ -172,17 +174,23 @@ class GigPanelWindow(QMainWindow):
 
         self.gp.document.setClickCallback(self.onDocumentClick)
 
+        midibox_cfg = app.config.get("midibox")
         midibox_params = {'port_name': 'Midibox XIAO BLE'}
         midibox_params['debug'] = True
         if app.parser.isSet(app.option_use_simulator):
             midibox_params = {'port_name': 'MidiboxSim', 'virtual': True, 'find': True, 'debug': True}
 
-        view = MidiboxQuickWidget(app, midibox_params=midibox_params,
+        if midibox_cfg and midibox_cfg.get("backend") == "osc":
+            params = midibox_cfg.get("backend-params")
+            print(params)
+            mb = OscMidibox((params['addr'], params['port']))
+        else:
+            mb = Midibox(**midibox_params)
+        app.midibox = self.midibox = mb
+        view = MidiboxQuickWidget(app, app.midibox,
                 **({'playlist_url': pcConfig['playlist']} if pcConfig.get('playlist') else {})
             )
 
-        app.midibox = view.midibox
-        self.midibox = app.midibox
         app.midibox._callbacks.append(self.midicb)
         app.mbview = view
         self.mbview = view
