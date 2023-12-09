@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import os
 import sys
 import asyncio
 import functools
@@ -8,12 +9,13 @@ import qasync
 import pathlib
 #from asyncqt import QEventLoop
 
+os.environ['QT_STYLE_OVERRIDE'] = 'Breeze'
+
 from PyQt5.QtCore import QCommandLineParser, QCommandLineOption
 from PyQt5.QtWidgets import QApplication
 
 from .window import GigPanelWindow
 from .playlist import PlaylistClient
-from .gposcclient import GigPanelOSCClient
 
 
 def parse_args(self):

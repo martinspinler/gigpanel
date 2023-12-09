@@ -10,7 +10,6 @@ import asyncio
 import aiohttp
 import ssl
 
-
 #import warnings
 from .widgets import DocumentWidget, DocumentWidgetScrollArea
 from .widgets import SongListDialog, PlaylistWidget
@@ -182,7 +181,6 @@ class GigPanelWindow(QMainWindow):
 
         if midibox_cfg and midibox_cfg.get("backend") == "osc":
             params = midibox_cfg.get("backend-params")
-            print(params)
             mb = OscMidibox((params['addr'], params['port']))
         else:
             mb = Midibox(**midibox_params)

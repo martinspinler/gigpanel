@@ -4,8 +4,6 @@ import asyncio
 import aiohttp
 import ssl
 
-import os
-os.environ['QT_STYLE_OVERRIDE'] = 'Breeze'
 
 class PlaylistClient():
     def __init__(self, widget, addr, secure = False, prefix = '', currentBand=1):
