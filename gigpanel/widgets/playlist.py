@@ -125,15 +125,8 @@ class PlaylistWidget(QWidget):
         del x
 
     def mv(self, off):
-        self.app.pc.playlist_item_move(self.playlist.currentItem().id, off)
-        return
-        r = self.playlist.currentRow()
-        x = self.playlist.takeItem(r)
-        if off:
-            self.playlist.insertItem(r + off, x)
-            r = self.playlist.setCurrentRow(r + off)
-        else:
-            del x
+        if self.playlist.currentItem():
+            self.app.pc.playlist_item_move(self.playlist.currentItem().id, off)
 
     def current_item_changed(self, ci, pi):
         if ci:
