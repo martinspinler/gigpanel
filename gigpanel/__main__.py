@@ -16,12 +16,15 @@ os.environ['QT_STYLE_OVERRIDE'] = 'Breeze'
 from PyQt5.QtCore import QCommandLineParser, QCommandLineOption
 from PyQt5.QtWidgets import QApplication
 
+import midibox.backends as mb_backends
+
 from .window import GigPanelWindow
 from .playlist import PlaylistClient
 
 
 def parse_args(self):
     parser = argparse.ArgumentParser(description='Gig Panel: Push Live performance to the next level')
+    parser.add_argument("-m", "--midibox", help="Midibox configuration in config file")
     parser.add_argument("-s", "--simulator", help="Use emulator", action='store_true')
     parser.add_argument("-f", "--fullscreen", help="Show in fullscreen mode", action='store_true')
     parser.add_argument("--edit_splitpoints", help="Edit splitpoints", action='store_true')
@@ -56,7 +59,13 @@ async def _main():
     app = QApplication.instance()
     app.args = parse_args(app)
 
-    app.config = yaml.load(open((pathlib.Path(__file__).parent / 'config.yaml').resolve(), 'r').read(), yaml.Loader)
+    cfg = app.config = yaml.load(open((pathlib.Path(__file__).parent / 'config.yaml').resolve(), 'r').read(), yaml.Loader)
+
+    mb_cfg_node = cfg.get("midibox", {})
+    mb_cfg_name = mb_cfg_node.get(app.args.midibox or "default-configuration")
+    mb_cfg = mb_cfg_node.get("configurations", {}).get(mb_cfg_name, {})
+
+    app.midibox = mb_backends.create_midibox_from_config(mb_cfg.get('backend', mb_backends.default_backend), **mb_cfg.get('backend-params', {}))
 
     pcConfig = app.config['playlistClients'][app.config['defaultPlaylistClient']]
     window = GigPanelWindow(pcConfig, app)

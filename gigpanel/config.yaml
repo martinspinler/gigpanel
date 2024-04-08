@@ -30,3 +30,19 @@ playlistClients:
     addr: '127.0.0.1:8012'
     secure: False
     playlist: 'http://127.0.0.1:8012/band/swingkong'
+
+midibox:
+  default-configuration: midibox
+  configurations:
+    midibox:
+      backend: osc
+      backend-params:
+        addr: midibox
+        port: 4302
+    local:
+      backend: osc
+      backend-params:
+        addr: localhost
+        port: 4302
+    simulator:
+      backend: simulator
