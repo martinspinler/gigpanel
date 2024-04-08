@@ -26,9 +26,9 @@ class DocumentWidget(QLabel):
 
         self.mode = self.MODE_NORMAL
         self.horizontal = app.horizontal
-        if app.parser.isSet(app.option_edit_splitpoints):
+        if app.args.edit_splitpoints:
             self.mode = self.MODE_SET_SPLITPOINTS
-        elif app.parser.isSet(app.option_edit_bounding_box):
+        elif app.args.edit_bounding_box:
             self.mode = self.MODE_SET_BOUNDING_BOX
 
         self._click_callback = None

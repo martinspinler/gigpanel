@@ -36,7 +36,7 @@ def set_style(app):
     r = app.screens()[0].geometry()
     app.horizontal = r.width() > r.height()
 
-    if app.parser.isSet(app.option_fullscreen):
+    if app.args.fullscreen:
         font_size = 48
         #doc_w, doc_h = int(1080-240), int(1920)
         #doc_w, doc_h = int(1080), int(1920-240)
@@ -176,7 +176,7 @@ class GigPanelWindow(QMainWindow):
         midibox_cfg = app.config.get("midibox")
         midibox_params = {'port_name': 'Midibox XIAO BLE'}
         midibox_params['debug'] = True
-        if app.parser.isSet(app.option_use_simulator):
+        if app.args.simulator:
             midibox_params = {'port_name': 'MidiboxSim', 'virtual': True, 'find': True, 'debug': True}
 
         if midibox_cfg and midibox_cfg.get("backend") == "osc":
@@ -218,7 +218,7 @@ class GigPanelWindow(QMainWindow):
         if ws:
             self.restoreState(ws.toByteArray())
 
-        if app.parser.isSet(app.option_fullscreen):
+        if app.args.fullscreen:
             self.setWindowState(Qt.WindowFullScreen)
 
     def onDocumentClick(self, pos, size):
@@ -240,7 +240,7 @@ class GigPanelWindow(QMainWindow):
 
     def closeEvent(self, event):
         settings = QSettings("cz.spinler", "gigpanel")
-        if not self.app.parser.isSet(self.app.option_fullscreen):
+        if not self.app.args.fullscreen:
             settings.setValue("geometry", self.saveGeometry())
         #settings.setValue("windowState", self.saveState())
         super().closeEvent(event)

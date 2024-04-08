@@ -7,6 +7,8 @@ import signal
 import yaml
 import qasync
 import pathlib
+import argparse
+
 #from asyncqt import QEventLoop
 
 os.environ['QT_STYLE_OVERRIDE'] = 'Breeze'
@@ -19,19 +21,19 @@ from .playlist import PlaylistClient
 
 
 def parse_args(self):
+    parser = argparse.ArgumentParser(description='Gig Panel: Push Live performance to the next level')
+    parser.add_argument("-s", "--simulator", help="Use emulator", action='store_true')
+    parser.add_argument("-f", "--fullscreen", help="Show in fullscreen mode", action='store_true')
+    parser.add_argument("--edit_splitpoints", help="Edit splitpoints", action='store_true')
+    parser.add_argument("--edit-bounding-box", help="Edit bounding box", action='store_true')
+    parser.add_argument("qt", nargs='*')
+
     app = self
     app.parser = QCommandLineParser()
-    app.parser.setApplicationDescription("Gig Panel");
     app.parser.addHelpOption();
-    app.option_use_simulator = QCommandLineOption("s", "Use emulator")
-    app.option_fullscreen = QCommandLineOption("f", "Show fullscreen")
-    app.option_edit_splitpoints = QCommandLineOption("e", "Edit splitpoints")
-    app.option_edit_bounding_box = QCommandLineOption("b", "Edit bounding box")
-    app.parser.addOption(app.option_use_simulator)
-    app.parser.addOption(app.option_fullscreen)
-    app.parser.addOption(app.option_edit_splitpoints)
-    app.parser.addOption(app.option_edit_bounding_box)
-    app.parser.process(app);
+    args = parser.parse_args()
+    app.parser.process([sys.argv[0]] + args.qt)
+    return args
 
 
 def init_loop(app):
@@ -52,7 +54,7 @@ def init_loop(app):
 async def _main():
     global app
     app = QApplication.instance()
-    parse_args(app)
+    app.args = parse_args(app)
 
     app.config = yaml.load(open((pathlib.Path(__file__).parent / 'config.yaml').resolve(), 'r').read(), yaml.Loader)
 
