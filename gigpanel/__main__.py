@@ -64,6 +64,10 @@ async def _main():
     mb_cfg_node = cfg.get("midibox", {})
     mb_cfg_name = mb_cfg_node.get(app.args.midibox or "default-configuration")
     mb_cfg = mb_cfg_node.get("configurations", {}).get(mb_cfg_name, {})
+    if (wcf := mb_cfg.get("widget-config-file")):
+        app.midibox_widget_cfg = yaml.load(open(wcf, 'r').read(), yaml.Loader)
+    else:
+        app.midibox_widget_cfg = {}
 
     app.midibox = mb_backends.create_midibox_from_config(mb_cfg.get('backend', mb_backends.default_backend), **mb_cfg.get('backend-params', {}))
 

@@ -172,8 +172,9 @@ class GigPanelWindow(QMainWindow):
 
         self.midibox = app.midibox
         view = MidiboxQuickWidget(app, self.midibox,
-                **({'playlist_url': pcConfig['playlist']} if pcConfig.get('playlist') else {})
-            )
+            **dict({'playlist_url': pcConfig['playlist']} if pcConfig.get('playlist') else {}),
+            **dict({'config': app.midibox_widget_cfg} if app.midibox_widget_cfg else {}),
+        )
 
         self.midibox._callbacks.append(self.midicb)
         app.mbview = view
