@@ -23,7 +23,7 @@ from PyQt5.QtCore import Qt, QSize, QPoint, QUrl, QFile, QTimer, QItemSelectionM
 from PyQt5.QtCore import QPropertyAnimation, QParallelAnimationGroup, QPoint, QAbstractAnimation
 from PyQt5.QtCore import QSettings
 
-from midibox import MidiboxQuickWidget
+from midibox.widget import MidiboxQuickWidget
 
 
 def set_style(app):
