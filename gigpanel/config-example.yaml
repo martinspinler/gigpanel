@@ -1,26 +1,22 @@
 prefixes:
-  cloud: '~/cloud/data/'
-  docs: '~/Documents/sheets/'
+  cloud: 'cloud/data/'
+  docs: 'Documents/'
 stores:
   sheets:
-    prefix: cloud
-    path: 'sheets/fakebooks/splitted/'
-    suffix: '.pdf'
-  pt:
-    prefix: cloud
-    path: 'bands/Perfect Time/scores/'
-    pattern: 'bands/Perfect Time/scores/{name}/{name}{instrument}.pdf'
-    suffix: '.pdf'
-  sk:
     prefix: docs
-    path: 'sk/drums/'
+    path: 'sheets/'
+    suffix: '.pdf'
+  arrangements:
+    prefix: cloud
+    path: 'band/scores/'
+    pattern: 'band/scores/{name}/{name}{instrument}.pdf'
     suffix: '.pdf'
 
-defaultStore: pt
-defaultPlaylistClient: ptlocal
+defaultStore: arrangements
+defaultPlaylistClient: mygreatband
 
 playlistClients:
-  ptlocal:
+  mygreatband:
     currentBand: 1
     url: 'http://127.0.0.1:8012/band/mygreatband'
 

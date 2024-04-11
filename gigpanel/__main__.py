@@ -23,7 +23,14 @@ from .playlist import PlaylistClient
 
 
 def parse_args(self):
+    try:
+        import platformdirs
+        defconfig = (platformdirs.user_config_path("gigpanel") / "config.yaml").resolve()
+    except:
+        defconfig = "gigpanel.yaml"
+
     parser = argparse.ArgumentParser(description='Gig Panel: Push Live performance to the next level')
+    parser.add_argument("-c", "--config", help="Configuration file", default=defconfig)
     parser.add_argument("-m", "--midibox", help="Midibox configuration in config file")
     parser.add_argument("-s", "--simulator", help="Use emulator", action='store_true')
     parser.add_argument("-f", "--fullscreen", help="Show in fullscreen mode", action='store_true')
@@ -57,13 +64,13 @@ def init_loop(app):
 async def _main():
     global app
     app = QApplication.instance()
-    app.args = parse_args(app)
+    args = app.args = parse_args(app)
 
-    cfg = app.config = yaml.load(open((pathlib.Path(__file__).parent / 'config.yaml').resolve(), 'r').read(), yaml.Loader)
+    cfg = app.config = yaml.load(open(args.config).read(), yaml.Loader)
 
     # Midibox setup
     mb_cfg_node = cfg.get("midibox", {})
-    mb_cfg_name = mb_cfg_node.get(app.args.midibox or "default-configuration")
+    mb_cfg_name = mb_cfg_node.get(args.midibox or "default-configuration")
     mb_cfg = mb_cfg_node.get("configurations", {}).get(mb_cfg_name, {})
     if (wcf := mb_cfg.get("widget-config-file")):
         app.midibox_widget_cfg = yaml.load(open(wcf, 'r').read(), yaml.Loader)
