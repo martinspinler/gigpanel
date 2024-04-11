@@ -22,14 +22,7 @@ defaultPlaylistClient: ptlocal
 playlistClients:
   ptlocal:
     currentBand: 1
-    addr: '127.0.0.1:8012'
-    secure: False
-    playlist: 'http://127.0.0.1:8012/band/perfecttime'
-  sklocal:
-    currentBand: 3
-    addr: '127.0.0.1:8012'
-    secure: False
-    playlist: 'http://127.0.0.1:8012/band/swingkong'
+    url: 'http://127.0.0.1:8012/band/mygreatband'
 
 midibox:
   default-configuration: midibox

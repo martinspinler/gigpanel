@@ -3,17 +3,18 @@ import json
 import asyncio
 import aiohttp
 import ssl
+import urllib.parse
 
 
 class PlaylistClient():
-    def __init__(self, addr, secure = False, prefix = '', currentBand=1):
+    def __init__(self, url, prefix = '', currentBand=1):
+        addr = urllib.parse.urlsplit(url)
+        secure = "s" if addr.scheme == 'https' else ""
+        self._addr = f"{addr.scheme}://{addr.netloc}"
+        self._wsaddr = f"ws{secure}://{addr.netloc}"
         self._prefix = prefix
-        self.addr = addr
-        #self.w = widget
-        self._s = "s" if secure else ""
         self._queue = asyncio.Queue()
-        self.currentPlaylistId = 8
-        self.currentBand = currentBand
+        self._currentBand = currentBand
         self._cbs = []
 
     def add_callback(self, cb):
@@ -79,15 +80,15 @@ class PlaylistClient():
         self.context = ssl._create_unverified_context()
 
         self.headers = {}
-        resp = await self.session.get(f'http{self._s}://{self.addr}/client/', ssl=self.context, headers=self.headers)
+        resp = await self.session.get(f'{self._addr}/client/', ssl=self.context, headers=self.headers)
         t1 = await resp.text()
         if 'refresh' in t1:
-            resp = await self.session.get(f'http{self._s}://{self.addr}/client/', ssl=self.context, headers=self.headers)
+            resp = await self.session.get(f'{self._addr}/client/', ssl=self.context, headers=self.headers)
             t1 = await resp.text()
         await self._reconnect()
 
     async def _reconnect(self):
-        self.ws = await self.session.ws_connect(f'ws{self._s}://{self.addr}/client/', ssl=self.context, headers=self.headers)
+        self.ws = await self.session.ws_connect(f'{self._wsaddr}/client/', ssl=self.context, headers=self.headers)
         msg = f"""lona:[1,null,101,["{self._prefix}/client/",null]]"""
 
         await self.ws.send_str(msg)
@@ -131,15 +132,15 @@ class PlaylistClient():
         return data
 
     async def get_db(self):
-        await self.send_msg_async("get-active-playlist", {'band_id': self.currentBand})
+        await self.send_msg_async("get-active-playlist", {'band_id': self._currentBand})
         _, data = await self._receive_msg('active-playlist')
         self.currentPlaylistId = data['playlist_id']
 
-        await self.send_msg_async("get-songlist", {'band_id': self.currentBand})
+        await self.send_msg_async("get-songlist", {'band_id': self._currentBand})
         _, data = await self._receive_msg('songlist')
         j = data
-        j = {int(k):v for k,v in j.items()}
-        j = {k:v for k, v in j.items()} # if v['band'] == self.currentBand}
+        j = {int(k): v for k, v in j.items()}
+        j = {k: v for k, v in j.items()}
         [j[k].update({'id':k}) for k in j.keys()]
         return j
 

@@ -77,7 +77,7 @@ async def _main():
     gpwindow = GigPanelWindow(cfg_pc, app)
     gpwidget = gpwindow.gp
 
-    app.pc = PlaylistClient(*(lambda c: (c['addr'], c['secure']))(cfg_pc), currentBand=cfg_pc['currentBand'])
+    app.pc = PlaylistClient(cfg_pc.get("url"), currentBand=cfg_pc['currentBand'])
     app.pc.add_callback(gpwidget.playlist.livelist_client_cb)
 
     gpwindow.tab_tempo.btn_next.clicked.connect(lambda x: app.pc.playlist_item_set(off=+1))
