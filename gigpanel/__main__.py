@@ -91,7 +91,7 @@ async def _main():
         print(e)
 
     songs = {}
-    pl = {'items': {}}
+    pl = {}
 
     loop, future = init_loop(app)
     try:

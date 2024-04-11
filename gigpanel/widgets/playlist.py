@@ -82,14 +82,15 @@ class PlaylistWidget(QWidget):
     def load(self, playlist):
         self.playlist.clear()
 
-        for songItem in playlist["items"]:
-            songId = songItem['songId']
+        for songItem in playlist:
+            playlistItem = playlist[songItem]
+            songId = playlistItem['song_id']
             try:
                 song = self.gp.songs[songId]
             except:
                 print("Cant find playlist song:", songItem)
             else:
-                self.playlist.addItem(PlaylistItem(song, songItem))
+                self.playlist.addItem(PlaylistItem(song, playlistItem))
 
     def play(self, pli):
         item = self.playlist.items_by_id[pli['id']]
@@ -116,7 +117,7 @@ class PlaylistWidget(QWidget):
         self.app.pc.playlist_item_del(self.playlist.currentItem().id)
 
     def client_add(self, pli):
-        song = self.gp.songs[pli['songId']]
+        song = self.gp.songs[pli['song_id']]
         self.playlist.addItem(PlaylistItem(song, pli))
 
     def client_del(self, pli):

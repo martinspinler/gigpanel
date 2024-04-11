@@ -100,16 +100,16 @@ class PlaylistClient():
         self._queue.put_nowait('close')
 
     def playlist_item_add(self, si):
-        self.send_msg('add', {'songId': si.song['id'], 'playlistId': self.currentPlaylistId})
+        self.send_msg('add', {'song_id': si.song['id'], 'playlist_id': self.currentPlaylistId})
 
     def playlist_item_del(self, si):
-        self.send_msg('delete', {'id': si, 'playlistId': self.currentPlaylistId})
+        self.send_msg('delete', {'id': si, 'playlist_id': self.currentPlaylistId})
 
     def playlist_item_move(self, si, pos):
-        self.send_msg('move', {'id': si, 'playlistId': self.currentPlaylistId, 'pos': pos})
+        self.send_msg('move', {'id': si, 'playlist_id': self.currentPlaylistId, 'pos': pos})
 
     def playlist_item_set(self, id = None, off = None):
-        self.send_msg('play', {'id': id, 'playlistId': self.currentPlaylistId, 'off': off})
+        self.send_msg('play', {'id': id, 'playlist_id': self.currentPlaylistId, 'off': off})
 
     def send_msg(self, msg, data = {}):
         self._queue.put_nowait(f'{msg}:' + json.JSONEncoder().encode(data))
@@ -126,20 +126,20 @@ class PlaylistClient():
                     cb(req, data)
 
     async def get_playlist(self):
-        await self.send_msg_async("get-playlist", {'playlistId': self.currentPlaylistId})
+        await self.send_msg_async("get-playlist", {'playlist_id': self.currentPlaylistId})
         _, data = await self._receive_msg('playlist')
         return data
 
     async def get_db(self):
-        await self.send_msg_async("get-active-playlist", {'bandId': self.currentBand})
+        await self.send_msg_async("get-active-playlist", {'band_id': self.currentBand})
         _, data = await self._receive_msg('active-playlist')
-        self.currentPlaylistId = data['playlistId']
+        self.currentPlaylistId = data['playlist_id']
 
-        await self.send_msg_async("get-songlist")
+        await self.send_msg_async("get-songlist", {'band_id': self.currentBand})
         _, data = await self._receive_msg('songlist')
         j = data
         j = {int(k):v for k,v in j.items()}
-        j = {k:v for k, v in j.items() if v['band'] == self.currentBand}
+        j = {k:v for k, v in j.items()} # if v['band'] == self.currentBand}
         [j[k].update({'id':k}) for k in j.keys()]
         return j
 

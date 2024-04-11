@@ -70,13 +70,15 @@ def set_style(app):
 def song_update_path(song, app):
     store = app.config['stores'][song['store']] if ('store' in song and song['store'] != None) else app.config['stores'][app.config['defaultStore']]
 
-    if 'file' in song and song['file'] != None:
-        song['filename'] = app.config['prefixes'][store['prefix']] + store['path'] + song['file'] + store['suffix']
+    file = song.get('filename')
+
+    if file:
+        song['filename'] = app.config['prefixes'][store['prefix']] + store['path'] + file + store['suffix']
     elif 'filename' not in song:
         song['filename'] = None
 
     if (song['filename'] is None or not QFile(song['filename']).exists()) and 'pattern' in store:
-        for fn in ([song['file']] if 'file' in song and song['file'] else []) + [song['name']]:
+        for fn in ([file] if file else []) + [song['name']]:
             for instrument in ['-Piano', ' - Piano', '-Electric_Piano', ' Piano', '']:
                 filename = app.config['prefixes'][store['prefix']] + store['pattern'].format(name=fn, instrument=instrument)
                 if QFile(filename).exists():
