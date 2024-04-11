@@ -6,15 +6,18 @@ import ssl
 
 
 class PlaylistClient():
-    def __init__(self, widget, addr, secure = False, prefix = '', currentBand=1):
+    def __init__(self, addr, secure = False, prefix = '', currentBand=1):
         self._prefix = prefix
         self.addr = addr
         #self.w = widget
-        self._cb = widget
         self._s = "s" if secure else ""
         self._queue = asyncio.Queue()
         self.currentPlaylistId = 8
         self.currentBand = currentBand
+        self._cbs = []
+
+    def add_callback(self, cb):
+        self._cbs.append(cb)
 
     async def _receive_msg(self, msgid):
         i = 0
@@ -119,7 +122,8 @@ class PlaylistClient():
         while req:
             req, data = await self._receive_msg(None)
             if req in ['add', 'delete', 'update', 'play']:
-                self._cb(req, data)
+                for cb in self._cbs:
+                    cb(req, data)
 
     async def get_playlist(self):
         await self.send_msg_async("get-playlist", {'playlistId': self.currentPlaylistId})

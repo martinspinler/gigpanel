@@ -61,6 +61,7 @@ async def _main():
 
     cfg = app.config = yaml.load(open((pathlib.Path(__file__).parent / 'config.yaml').resolve(), 'r').read(), yaml.Loader)
 
+    # Midibox setup
     mb_cfg_node = cfg.get("midibox", {})
     mb_cfg_name = mb_cfg_node.get(app.args.midibox or "default-configuration")
     mb_cfg = mb_cfg_node.get("configurations", {}).get(mb_cfg_name, {})
@@ -71,15 +72,19 @@ async def _main():
 
     app.midibox = mb_backends.create_midibox_from_config(mb_cfg.get('backend', mb_backends.default_backend), **mb_cfg.get('backend-params', {}))
 
-    pcConfig = app.config['playlistClients'][app.config['defaultPlaylistClient']]
-    window = GigPanelWindow(pcConfig, app)
-    gigpanel = window.gp
-    app.pc = PlaylistClient(gigpanel.playlist.livelist_client_cb, *(lambda c: (c['addr'], c['secure']))(pcConfig), currentBand=pcConfig['currentBand'])
+    # Playlist setup
+    cfg_pc = cfg['playlistClients'][cfg['defaultPlaylistClient']]
+    gpwindow = GigPanelWindow(cfg_pc, app)
+    gpwidget = gpwindow.gp
 
-    window.tab_tempo.btn_next.clicked.connect(lambda x: app.pc.playlist_item_set(off=+1))
-    #app.oc = GigPanelOSCClient(gigpanel, (lambda c: (c['addr'], c['port']))(app.config['oscClient']))
+    app.pc = PlaylistClient(*(lambda c: (c['addr'], c['secure']))(cfg_pc), currentBand=cfg_pc['currentBand'])
+    app.pc.add_callback(gpwidget.playlist.livelist_client_cb)
 
-    window.show()
+    gpwindow.tab_tempo.btn_next.clicked.connect(lambda x: app.pc.playlist_item_set(off=+1))
+    #app.oc = GigPanelOSCClient(gpwidget, (lambda c: (c['addr'], c['port']))(app.config['oscClient']))
+
+    gpwindow.show()
+
     try:
         app.midibox.connect()
     except Exception as e:
@@ -96,8 +101,8 @@ async def _main():
     except Exception as e:
         print(e)
 
-    gigpanel.loadSongs(songs)
-    gigpanel.playlist.load(pl)
+    gpwidget.loadSongs(songs)
+    gpwidget.playlist.load(pl)
 
     try:
         #app.oc.start()
