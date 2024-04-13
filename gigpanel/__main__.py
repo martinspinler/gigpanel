@@ -32,7 +32,6 @@ def parse_args(self):
     parser = argparse.ArgumentParser(description='Gig Panel: Push Live performance to the next level')
     parser.add_argument("-c", "--config", help="Configuration file", default=defconfig)
     parser.add_argument("-m", "--midibox", help="Midibox configuration in config file")
-    parser.add_argument("-s", "--simulator", help="Use emulator", action='store_true')
     parser.add_argument("-f", "--fullscreen", help="Show in fullscreen mode", action='store_true')
     parser.add_argument("--edit_splitpoints", help="Edit splitpoints", action='store_true')
     parser.add_argument("--edit-bounding-box", help="Edit bounding box", action='store_true')
@@ -70,7 +69,7 @@ async def _main():
 
     # Midibox setup
     mb_cfg_node = cfg.get("midibox", {})
-    mb_cfg_name = mb_cfg_node.get(args.midibox or "default-configuration")
+    mb_cfg_name = args.midibox or mb_cfg_node.get("default-configuration")
     mb_cfg = mb_cfg_node.get("configurations", {}).get(mb_cfg_name, {})
     if (wcf := mb_cfg.get("widget-config-file")):
         app.midibox_widget_cfg = yaml.load(open(wcf, 'r').read(), yaml.Loader)
