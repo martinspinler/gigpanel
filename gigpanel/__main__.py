@@ -70,7 +70,7 @@ async def _main():
     # Midibox setup
     mb_cfg_node = cfg.get("midibox", {})
     mb_cfg_name = args.midibox or mb_cfg_node.get("default-configuration")
-    mb_cfg = mb_cfg_node.get("configurations", {}).get(mb_cfg_name, {})
+    app.mb_cfg = mb_cfg = mb_cfg_node.get("configurations", {}).get(mb_cfg_name, {})
     if (wcf := mb_cfg.get("widget-config-file")):
         app.midibox_widget_cfg = yaml.load(open(wcf, 'r').read(), yaml.Loader)
     else:

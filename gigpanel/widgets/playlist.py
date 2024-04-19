@@ -1,3 +1,5 @@
+import os
+
 from PyQt5.QtWidgets import QFileDialog, QDialog, QApplication, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QFormLayout, QComboBox, QToolButton, QPushButton, QInputDialog, QLineEdit, QLabel, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QTreeWidget, QTreeWidgetItem, QSizePolicy, QMenu, QAction, QFrame, QLabel, QAbstractItemView, QMessageBox, QStackedLayout, QListWidget, QListWidgetItem, QFileIconProvider, QGridLayout, QSizePolicy, QDockWidget, QScrollArea, QAbstractScrollArea, QLayout, QTabBar
 from PyQt5.QtQuickWidgets import QQuickWidget
 from PyQt5.QtGui import QFontMetrics, QFont, QImage, QPixmap, QIcon, QPaintEvent, QPainter, QPainterPath, QColor, QPalette, QBrush, QPen, QResizeEvent
@@ -63,7 +65,10 @@ class PlaylistWidget(QWidget):
             btn.clicked.connect(cb)
             l.addWidget(btn)
 
-        addButton("Poweroff oscbox", lambda x: self.app.oc.send_message("/poweroff", None))
+        midibox_host = app.mb_cfg.get("backend-params", {}).get("addr", 'invalid')
+        cmd = f'ssh -o ConnectTimeout=3 {midibox_host} -C sudo poweroff'
+        addButton("Poweroff oscbox", lambda x: os.system(cmd))
+        #addButton("Poweroff oscbox", lambda x: self.app.oc.send_message("/poweroff", None))
         addButton("Move up", lambda x: self.mv(-1))
         addButton("Move down", lambda x: self.mv(+1))
         addButton("Delete", lambda x: self.delete())
