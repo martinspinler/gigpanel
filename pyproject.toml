@@ -5,7 +5,8 @@ dependencies = [
 	"qasync",
 	"aiohttp",
 	"mido",
-	"python-dispatch"
+	"python-dispatch",
+	"midibox",
 ]
 
 [project.scripts]
