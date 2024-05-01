@@ -123,8 +123,9 @@ async def _main():
 
 def main():
     signal.signal(signal.SIGINT, signal.SIG_DFL)
+    use_qasync_workaround = True
     try:
-        if sys.version_info.major == 3 and sys.version_info.minor == 11:
+        if use_qasync_workaround:
             with qasync._set_event_loop_policy(qasync.DefaultQEventLoopPolicy()):
                 runner = asyncio.runners.Runner()
                 try:
