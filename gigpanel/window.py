@@ -1,34 +1,30 @@
 #!/usr/bin/python3
-import sys
-import os
-import time
-import socket
-import threading
-import json
 
-import asyncio
-import aiohttp
-import ssl
 
 #import warnings
 from .widgets import DocumentWidget, DocumentWidgetScrollArea
-from .widgets import SongListDialog, PlaylistWidget
+from .widgets import PlaylistWidget
 from .widgets import HidableTabPanel, TabTempoWidget
 
-from PyQt5.QtWidgets import QFileDialog, QDialog, QApplication, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QFormLayout, QComboBox, QToolButton, QPushButton, QInputDialog, QLineEdit, QLabel, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QTreeWidget, QTreeWidgetItem, QSizePolicy, QMenu, QAction, QFrame, QLabel, QAbstractItemView, QMessageBox, QStackedLayout, QListWidget, QListWidgetItem, QFileIconProvider, QGridLayout, QSizePolicy, QDockWidget, QScrollArea, QAbstractScrollArea, QLayout, QTabBar
-from PyQt5.QtQuickWidgets import QQuickWidget
-from PyQt5.QtGui import QFontMetrics, QFont, QImage, QPixmap, QIcon, QPaintEvent, QPainter, QPainterPath, QColor, QPalette, QBrush, QPen, QResizeEvent
-from PyQt5.QtCore import Qt, QSize, QPoint, QUrl, QFile, QTimer, QItemSelectionModel, QRect, QRegExp, QIODevice, QCommandLineParser, QCommandLineOption
+from PyQt5.QtWidgets import QWidget, QMainWindow, QVBoxLayout, QStackedLayout, QDockWidget, QAbstractScrollArea
+from PyQt5.QtCore import Qt, QFile
 
-from PyQt5.QtCore import QPropertyAnimation, QParallelAnimationGroup, QPoint, QAbstractAnimation
 from PyQt5.QtCore import QSettings
 
 from midibox.widget import MidiboxQuickWidget
 
 
 def set_style(app):
-    style_fs = lambda w, h: (f"min-width:{w}px;max-width:{w}px;" if w != None else "") + (f"min-height:{h}px;max-height:{h}px;" if h != None else "")
-    style_fs2 = lambda w, h: (f"max-width:{w}px;" if w != None else "") + (f"max-height:{h}px;" if h != None else "")
+    def style_fs(w, h):
+        ws = f"min-width:{w}px;max-width:{w}px;" if w is not  None else ""
+        hs = f"min-height:{h}px;max-height:{h}px;" if h is not None else ""
+        return ws + hs
+
+    def style_fs2(w, h):
+        ws = f"max-width:{w}px;" if w is not None else ""
+        hs = f"max-height:{h}px;" if h is not None else ""
+        return ws + hs
+
     style = ""
 
     r = app.screens()[0].geometry()
@@ -64,11 +60,11 @@ def set_style(app):
     style += " QPushButton#tempoButton1{background-color: yellow; font: 64px;}"
     style += " QPushButton#tempoButton:checked{background-color: blue;}"
     style += " QPushButton#tempoButton1:checked{background-color: red;}"
-    app.setStyleSheet(style);
+    app.setStyleSheet(style)
 
 
 def song_update_path(song, app):
-    store = app.config['stores'][song['store']] if ('store' in song and song['store'] != None) else app.config['stores'][app.config['defaultStore']]
+    store = app.config['stores'][song['store']] if ('store' in song and song['store'] is not None) else app.config['stores'][app.config['defaultStore']]
 
     file = song.get('filename')
 
@@ -100,15 +96,15 @@ class GigPanelWidget(QWidget):
         self.setLayout(self.stacked_layout)
         self.stacked_layout.setStackingMode(QStackedLayout.StackAll)
 
-        self.stacked_layout.setAlignment(Qt.AlignBottom | Qt.AlignLeft);
+        self.stacked_layout.setAlignment(Qt.AlignBottom | Qt.AlignLeft)
 
-        l = QVBoxLayout()
+        layout = QVBoxLayout()
         w = QWidget()
-        w.setLayout(l)
+        w.setLayout(layout)
         self.stacked_layout.setCurrentIndex(0)
 
-        l.setSpacing(0)
-        l.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         self.document = DocumentWidget(self, app)
         sa = DocumentWidgetScrollArea()
@@ -122,7 +118,7 @@ class GigPanelWidget(QWidget):
         self.stacked_layout.addWidget(sa)
 
         v = QVBoxLayout()
-        l.addLayout(v)
+        layout.addLayout(v)
 
         self.stacked_layout.setCurrentIndex(1)
         self.playlist = PlaylistWidget(self, app, self.wnd)

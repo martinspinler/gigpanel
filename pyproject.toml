@@ -4,9 +4,16 @@ version = "1.0.0"
 dependencies = [
 	"qasync",
 	"aiohttp",
-	"mido",
-	"python-dispatch",
 	"midibox",
+	"python-poppler-qt5",
+]
+
+[project.optional-dependencies]
+all = [
+	"platformdirs",
+]
+box = [
+	"numpy",
 ]
 
 [project.scripts]
@@ -14,3 +21,7 @@ gigpanel = "gigpanel.__main__:main"
 
 [tool.setuptools]
 packages = ["gigpanel"]
+
+[[tool.mypy.overrides]]
+module = "popplerqt5,qasync,midibox.*"
+ignore_missing_imports = true

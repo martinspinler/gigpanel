@@ -1,10 +1,6 @@
 import os
 
-from PyQt5.QtWidgets import QFileDialog, QDialog, QApplication, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QFormLayout, QComboBox, QToolButton, QPushButton, QInputDialog, QLineEdit, QLabel, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QTreeWidget, QTreeWidgetItem, QSizePolicy, QMenu, QAction, QFrame, QLabel, QAbstractItemView, QMessageBox, QStackedLayout, QListWidget, QListWidgetItem, QFileIconProvider, QGridLayout, QSizePolicy, QDockWidget, QScrollArea, QAbstractScrollArea, QLayout, QTabBar
-from PyQt5.QtQuickWidgets import QQuickWidget
-from PyQt5.QtGui import QFontMetrics, QFont, QImage, QPixmap, QIcon, QPaintEvent, QPainter, QPainterPath, QColor, QPalette, QBrush, QPen, QResizeEvent
-from PyQt5.QtCore import Qt, QSize, QPoint, QUrl, QFile, QTimer, QItemSelectionModel, QRect, QRegExp, QIODevice, QCommandLineParser, QCommandLineOption
-
+from PyQt5.QtWidgets import QWidget, QListWidget, QListWidgetItem, QHBoxLayout, QVBoxLayout, QPushButton
 from . import SongListDialog
 
 class QListWidgetWithId(QListWidget):
@@ -48,13 +44,13 @@ class PlaylistWidget(QWidget):
         #l.addSpacing(40)
         #l.setStretch(0, 1)
 
-        l = QVBoxLayout()
+        layout = QVBoxLayout()
         if self.app.horizontal and False:
             #l = QVBoxLayout()
-            l.addWidget(self.playlist)
+            layout.addWidget(self.playlist)
         else:
             h.addWidget(self.playlist)
-        h.addLayout(l)
+        h.addLayout(layout)
 
         #l.setStretch(0, 1)
         #h.addLayout(l)
@@ -63,7 +59,7 @@ class PlaylistWidget(QWidget):
         def addButton(text, cb):
             btn = QPushButton(text)
             btn.clicked.connect(cb)
-            l.addWidget(btn)
+            layout.addWidget(btn)
 
         midibox_host = app.mb_cfg.get("backend-params", {}).get("addr", 'invalid')
         cmd = f'ssh -o ConnectTimeout=3 {midibox_host} -C sudo poweroff'
@@ -72,11 +68,10 @@ class PlaylistWidget(QWidget):
         addButton("Move up", lambda x: self.mv(-1))
         addButton("Move down", lambda x: self.mv(+1))
         addButton("Delete", lambda x: self.delete())
-        addButton("Insert", self.insert)
         addButton("Add", self.add)
         addButton("Prev",lambda x: self.app.pc.playlist_item_set(off=-1))
         addButton("Next",lambda x: self.app.pc.playlist_item_set(off=+1))
-        l.addSpacing(40)
+        layout.addSpacing(40)
 
         addButton("Next page", lambda x: self.gp.document.next_page())
         #addButton("Store db", self.gp.storeDb)
@@ -92,29 +87,18 @@ class PlaylistWidget(QWidget):
             songId = playlistItem['song_id']
             try:
                 song = self.gp.songs[songId]
-            except:
+            except KeyError:
                 print("Cant find playlist song:", songItem)
             else:
                 self.playlist.addItem(PlaylistItem(song, playlistItem))
 
     def play(self, pli):
         item = self.playlist.items_by_id[pli['id']]
-        x = self.playlist.setCurrentRow(self.playlist.row(item))
-
-    def insert(self, ch):
-        d = SongListDialog(self.gp, self.app).get_songs()
-        if d != None:
-            r = self.playlist.currentRow() + 1
-            for si in reversed(d):
-                pass
-                # TODO
-#                app.pc.playlist_item_add(si)
-#####                self.playlist.insertItem(r, PlaylistItem(si.song))
-
+        self.playlist.setCurrentRow(self.playlist.row(item))
 
     def add(self, ch):
         d = SongListDialog(self.gp, self.app).get_songs()
-        if d != None:
+        if d is not None:
             for si in d:
                 self.app.pc.playlist_item_add(si)
 

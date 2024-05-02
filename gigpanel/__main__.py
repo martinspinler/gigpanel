@@ -6,14 +6,19 @@ import functools
 import signal
 import yaml
 import qasync
-import pathlib
 import argparse
+
+try:
+    import platformdirs as _platformdirs
+except ModuleNotFoundError:
+    platformdirs = None
+else:
+    platformdirs = _platformdirs
 
 #from asyncqt import QEventLoop
 
-os.environ['QT_STYLE_OVERRIDE'] = 'Breeze'
 
-from PyQt5.QtCore import QCommandLineParser, QCommandLineOption
+from PyQt5.QtCore import QCommandLineParser
 from PyQt5.QtWidgets import QApplication
 
 import midibox.backends as mb_backends
@@ -21,12 +26,12 @@ import midibox.backends as mb_backends
 from .window import GigPanelWindow
 from .playlist import PlaylistClient
 
+os.environ['QT_STYLE_OVERRIDE'] = 'Breeze'
 
 def parse_args(self):
-    try:
-        import platformdirs
+    if platformdirs is not None:
         defconfig = (platformdirs.user_config_path("gigpanel") / "config.yaml").resolve()
-    except:
+    else:
         defconfig = "gigpanel.yaml"
 
     parser = argparse.ArgumentParser(description='Gig Panel: Push Live performance to the next level')
@@ -39,7 +44,7 @@ def parse_args(self):
 
     app = self
     app.parser = QCommandLineParser()
-    app.parser.addHelpOption();
+    app.parser.addHelpOption()
     args = parser.parse_args()
     app.parser.process([sys.argv[0]] + args.qt)
     return args

@@ -1,7 +1,5 @@
-from PyQt5.QtWidgets import QFileDialog, QDialog, QApplication, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QFormLayout, QComboBox, QToolButton, QPushButton, QInputDialog, QLineEdit, QLabel, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QTreeWidget, QTreeWidgetItem, QSizePolicy, QMenu, QAction, QFrame, QLabel, QAbstractItemView, QMessageBox, QStackedLayout, QListWidget, QListWidgetItem, QFileIconProvider, QGridLayout, QSizePolicy, QDockWidget, QScrollArea, QAbstractScrollArea, QLayout, QTabBar
-from PyQt5.QtQuickWidgets import QQuickWidget
-from PyQt5.QtGui import QFontMetrics, QFont, QImage, QPixmap, QIcon, QPaintEvent, QPainter, QPainterPath, QColor, QPalette, QBrush, QPen, QResizeEvent
-from PyQt5.QtCore import Qt, QSize, QPoint, QUrl, QFile, QTimer, QItemSelectionModel, QRect, QRegExp, QIODevice, QCommandLineParser, QCommandLineOption
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QAbstractItemView, QListWidget, QListWidgetItem, QFileIconProvider, QGridLayout, QSizePolicy
+from PyQt5.QtCore import Qt, QFile, QItemSelectionModel, QRegExp
 
 
 class SonglistItem(QListWidgetItem):
@@ -101,7 +99,7 @@ class SongListDialog(QDialog):
                 ]:
             btn = QPushButton(text)
             btn.clicked.connect(lambda ch,d=data: self.btnpress(d))
-            btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding);
+            btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             g.addWidget(btn, x, y)
             g.setRowStretch(x, 1)
 

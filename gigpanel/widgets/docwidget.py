@@ -1,10 +1,16 @@
 #!/usr/bin/python3
-from PyQt5.QtWidgets import QFileDialog, QDialog, QApplication, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QFormLayout, QComboBox, QPushButton, QInputDialog, QLineEdit, QLabel, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QTreeWidget, QTreeWidgetItem, QSizePolicy, QMenu, QAction, QFrame, QLabel, QAbstractItemView, QMessageBox, QStackedLayout, QListWidget, QListWidgetItem, QFileIconProvider, QGridLayout, QSizePolicy, QDockWidget, QScrollArea, QAbstractScrollArea
-from PyQt5.QtGui import QFontMetrics, QFont, QImage, QPixmap, QIcon, QPaintEvent, QPainter, QPainterPath, QColor, QPalette, QBrush, QPen, QResizeEvent
-from PyQt5.QtCore import Qt, QSize, QPoint, QUrl, QFile, QTimer, QItemSelectionModel, QRect, QRegExp, QIODevice, QCommandLineParser, QCommandLineOption
+from PyQt5.QtWidgets import QLabel, QScrollArea
+from PyQt5.QtGui import QImage, QPixmap, QPainter
+from PyQt5.QtCore import Qt, QPoint, QRect
 
 import popplerqt5
-import numpy as np
+try:
+    import numpy as _np
+except ModuleNotFoundError:
+    np = None
+else:
+    np = _np
+
 
 class DocumentWidget(QLabel):
     MODE_NORMAL = 0
@@ -16,7 +22,7 @@ class DocumentWidget(QLabel):
         self.setObjectName("DocumentWidget")
         self.gp = gp
 
-        self.setAlignment(Qt.AlignTop | Qt.AlignLeft);
+        self.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.document = None
         self.page = None
         self.page_index = 0
@@ -81,7 +87,7 @@ class DocumentWidget(QLabel):
 
             ps = self.page.pageSize()
             s = [int(x * (ps.width() / self.width())) for x in self.bb]
-            sp = self.song['Pages'][self.page_index]['BoundingBox'] = s
+            self.song['Pages'][self.page_index]['BoundingBox'] = s
             self.bb = []
 
     def mousePressEvent(self, e):
@@ -94,7 +100,7 @@ class DocumentWidget(QLabel):
             self.song['Pages'] += [{} for i in range(max(0, self.page_index + 1 - len(self.song['Pages'])))]
             if 'Splitpoints' not in self.song['Pages'][self.page_index]:
                 self.song['Pages'][self.page_index]['Splitpoints'] = []
-            sp = self.song['Pages'][self.page_index]['Splitpoints'].append(y)
+            self.song['Pages'][self.page_index]['Splitpoints'].append(y)
             self.loadPage(self.page_index)
             #self.update()
         elif self.mode == self.MODE_SET_BOUNDING_BOX:
@@ -147,7 +153,7 @@ class DocumentWidget(QLabel):
         dpi = int(72 * mult)
         img = self.page.renderToImage(dpi, dpi, 0, yfrom, ps.width(), yto)
 
-        if False:
+        if False and np is not None:
             rect = self.get_bounding_box(img).adjusted(*(lambda x: [-x, -x, x, x])(20))
             img = img.copy(rect)
         elif self.page_boundingbox and self.mode == self.MODE_NORMAL:
@@ -199,9 +205,9 @@ class DocumentWidget(QLabel):
     def get_bounding_box(self, img):
         def find_nonwhite_row(array, backward):
             r = (lambda x: reversed(x) if backward else x)(range(array.shape[0]))
-            for l in r:
-                if np.mean(array[l]) < 250:
-                    return l
+            for n in r:
+                if np.mean(array[n]) < 250:
+                    return n
             return r.stop
 
         img = img.convertToFormat(QImage.Format.Format_RGB32)
