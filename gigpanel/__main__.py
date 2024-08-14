@@ -65,6 +65,18 @@ def init_loop(app):
     return loop, future
 
 
+def create_midibox(app):
+    mb_cfg_node = app.config.get("midibox", {})
+    mb_cfg_name = app.args.midibox or mb_cfg_node.get("default-configuration")
+    app.mb_cfg = mb_cfg = mb_cfg_node.get("configurations", {}).get(mb_cfg_name, {})
+    if (wcf := mb_cfg.get("widget-config-file")):
+        app.midibox_widget_cfg = yaml.load(open(wcf, 'r').read(), yaml.Loader)
+    else:
+        app.midibox_widget_cfg = {}
+
+    return mb_backends.create_midibox_from_config(mb_cfg.get('backend', mb_backends.default_backend), **mb_cfg.get('backend-params', {}))
+
+
 async def _main():
     global app
     app = QApplication.instance()
@@ -72,28 +84,13 @@ async def _main():
 
     cfg = app.config = yaml.load(open(args.config).read(), yaml.Loader)
 
-    # Midibox setup
-    mb_cfg_node = cfg.get("midibox", {})
-    mb_cfg_name = args.midibox or mb_cfg_node.get("default-configuration")
-    app.mb_cfg = mb_cfg = mb_cfg_node.get("configurations", {}).get(mb_cfg_name, {})
-    if (wcf := mb_cfg.get("widget-config-file")):
-        app.midibox_widget_cfg = yaml.load(open(wcf, 'r').read(), yaml.Loader)
-    else:
-        app.midibox_widget_cfg = {}
-
-    app.midibox = mb_backends.create_midibox_from_config(mb_cfg.get('backend', mb_backends.default_backend), **mb_cfg.get('backend-params', {}))
+    app.midibox = create_midibox(app)
 
     # Playlist setup
     cfg_pc = cfg['playlistClients'][cfg['defaultPlaylistClient']]
-    gpwindow = GigPanelWindow(cfg_pc, app)
-    gpwidget = gpwindow.gp
-
     app.pc = PlaylistClient(cfg_pc.get("url"), currentBand=cfg_pc['currentBand'])
-    app.pc.add_callback(gpwidget.playlist.livelist_client_cb)
 
-    gpwindow.tab_tempo.btn_next.clicked.connect(lambda x: app.pc.playlist_item_set(off=+1))
-    #app.oc = GigPanelOSCClient(gpwidget, (lambda c: (c['addr'], c['port']))(app.config['oscClient']))
-
+    gpwindow = GigPanelWindow(cfg_pc, app)
     gpwindow.show()
 
     try:
@@ -101,20 +98,14 @@ async def _main():
     except Exception as e:
         print(e)
 
-    songs = {}
-    pl = {}
-
-    loop, future = init_loop(app)
     try:
         await app.pc.connect()
-        songs = await app.pc.get_db()
-        pl = await app.pc.get_playlist()
+        await app.pc.get_db()
+        await app.pc.get_playlist()
     except Exception as e:
         print(e)
 
-    gpwidget.loadSongs(songs)
-    gpwidget.playlist.load(pl)
-
+    loop, future = init_loop(app)
     try:
         #app.oc.start()
         asyncio.ensure_future(app.pc.get_messages())
@@ -141,6 +132,7 @@ def main():
             qasync.run(_main())
     except asyncio.exceptions.CancelledError:
         sys.exit(0)
+
 
 if __name__ == "__main__":
     main()

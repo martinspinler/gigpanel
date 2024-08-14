@@ -206,6 +206,17 @@ class GigPanelWindow(QMainWindow):
         if app.args.fullscreen:
             self.setWindowState(Qt.WindowFullScreen)
 
+        self.tab_tempo.btn_next.clicked.connect(lambda x: app.pc.playlist_item_set(off=+1))
+
+        app.pc.add_callback(self.gp.playlist.livelist_client_cb)
+        app.pc.add_callback(self.livelist_client_cb)
+
+    def livelist_client_cb(self, cmd, data):
+        if cmd == "_update_db":
+            self.gp.loadSongs(data)
+        elif cmd == "_update_playlist":
+            self.gp.playlist.load(data)
+
     def onDocumentClick(self, pos, size):
         visible = self.dwIsVisible()
         if visible or pos.y() > int(size.height() * 0.9):

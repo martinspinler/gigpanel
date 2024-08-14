@@ -132,5 +132,5 @@ class PlaylistWidget(QWidget):
         }
         if cmd in requests:
             requests[cmd](data)
-        else:
+        elif not cmd.startswith("_"):
             print("Playlist: unhandled cmd", cmd)

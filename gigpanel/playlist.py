@@ -129,6 +129,10 @@ class PlaylistClient():
     async def get_playlist(self):
         await self.send_msg_async("get-playlist", {'playlist_id': self.currentPlaylistId})
         _, data = await self._receive_msg('playlist')
+
+        for cb in self._cbs:
+            cb("_update_playlist", data)
+
         return data
 
     async def get_db(self):
@@ -142,4 +146,8 @@ class PlaylistClient():
         j = {int(k): v for k, v in j.items()}
         j = {k: v for k, v in j.items()}
         [j[k].update({'id': k}) for k in j.keys()]
+
+        for cb in self._cbs:
+            cb("_update_db", j)
+
         return j
