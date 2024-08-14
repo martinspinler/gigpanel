@@ -119,7 +119,7 @@ async def _main():
         #app.oc.start()
         asyncio.ensure_future(app.pc.get_messages())
         await future
-    except:
+    except Exception:
         raise
     finally:
         #app.oc.stop()

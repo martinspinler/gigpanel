@@ -16,7 +16,7 @@ from midibox.widget import MidiboxQuickWidget
 
 def set_style(app):
     def style_fs(w, h):
-        ws = f"min-width:{w}px;max-width:{w}px;" if w is not  None else ""
+        ws = f"min-width:{w}px;max-width:{w}px;" if w is not None else ""
         hs = f"min-height:{h}px;max-height:{h}px;" if h is not None else ""
         return ws + hs
 
@@ -35,7 +35,7 @@ def set_style(app):
         #doc_w, doc_h = int(1080-240), int(1920)
         #doc_w, doc_h = int(1080), int(1920-240)
         if app.horizontal:
-            doc_w, doc_h = r.width()-140, r.height()
+            doc_w, doc_h = r.width() - 140, r.height()
         else:
             doc_w, doc_h = r.width(), r.height()
         style = f"""
@@ -48,7 +48,7 @@ def set_style(app):
         doc_w, doc_h = 80, 60
         doc_w, doc_h = int(1440), int(1080)
         doc_w, doc_h = int(1440), None
-        doc_w, doc_h = int(1080/3), int(1920/3)
+        doc_w, doc_h = int(1080 / 3), int(1920 / 3)
         #doc_w, doc_h = int(1080/3), int(1920/3)
         #win_w, win_h = int(1920/2), int(1080/2)
 
@@ -230,7 +230,7 @@ class GigPanelWindow(QMainWindow):
         #settings.setValue("windowState", self.saveState())
         super().closeEvent(event)
 
-    def dwSetVisible(self, v: bool, index = 1):
+    def dwSetVisible(self, v: bool, index=1):
         self.hw.tb.setCurrentIndex(index if v else 0)
 
     def dwIsVisible(self):

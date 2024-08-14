@@ -17,7 +17,7 @@ class TempoWidget(QWidget):
         layout.setStretchFactor(self.tempoText, 1)
 
         for i in range(4):
-            btn = QPushButton(str(i+1))
+            btn = QPushButton(str(i + 1))
             layout.addWidget(btn)
             btn.setEnabled(False)
             self.tempoBtns.append(btn)
@@ -46,7 +46,7 @@ class TempoWidget(QWidget):
             self.tempoBtns[0].setChecked(True)
         else:
             self.tempoBtns[st].setChecked(False)
-            self.tempoBtns[((st+1) % len(self.tempoBtns))].setChecked(True)
+            self.tempoBtns[((st + 1) % len(self.tempoBtns))].setChecked(True)
 
 class TabTempoWidget(QWidget):
     def __init__(self):

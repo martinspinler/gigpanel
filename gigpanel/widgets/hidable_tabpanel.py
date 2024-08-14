@@ -78,4 +78,3 @@ class HidableTabPanel(QWidget):
         h = wend.sizeHint().height()
         self._animate(wstart.toggleAnimation, wstart.maximumHeight(), 0)
         self._animate(wend.toggleAnimation, 0, h)
-

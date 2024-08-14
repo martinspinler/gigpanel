@@ -50,8 +50,8 @@ class DocumentWidget(QLabel):
         if not self.document:
             return
 
-        self.document.setRenderHint(doc.Antialiasing |
-                doc.TextAntialiasing | doc.ThinLineShape | doc.TextSlightHinting )
+        hints = doc.Antialiasing | doc.TextAntialiasing | doc.ThinLineShape | doc.TextSlightHinting
+        self.document.setRenderHint(hints)
         #self.document.setRenderBackend(doc.SplashBackend)
         #self.document.setRenderBackend(doc.ArthurBackend)
         self.loadPage(0)
@@ -114,7 +114,6 @@ class DocumentWidget(QLabel):
                     self.prev_page()
 
     def loadPage(self, index):
-      #with CodeTimer():
         if not self.document:
             return
 
@@ -141,7 +140,7 @@ class DocumentWidget(QLabel):
         ps = self.page.pageSize()
 
         yfrom = self.page_splitpoints[self.page_splitindex - 1] if len(self.page_splitpoints) > 0 and self.page_splitindex > 0 else 0
-        yto   = self.page_splitpoints[self.page_splitindex]     if len(self.page_splitpoints) > self.page_splitindex else ps.height() - yfrom
+        yto   = self.page_splitpoints[self.page_splitindex - 0] if len(self.page_splitpoints) > self.page_splitindex else ps.height() - yfrom
 
         if self.mode == self.MODE_SET_SPLITPOINTS:
             yfrom, yto = 0, ps.height()
@@ -189,7 +188,6 @@ class DocumentWidget(QLabel):
                 p.drawLine(bb[2], bb[1], bb[2], bb[3]) #R
             p.end()
 
-
         self.setPixmap(pixmap)
 
     def setClickCallback(self, cb):
@@ -226,17 +224,12 @@ class DocumentWidget(QLabel):
         self.loadPage(self.page_index)
 
     def next_page(self):
-        #if len(self.page_splitpoints) > self.page_splitindex:
-        #    self.page_splitindex += 1
-        #    self.loadPage(self.page_index)
-        #else:
-            self.page_splitindex = 0
-            self.loadPage(self.page_index + 1)
+        self.page_splitindex = 0
+        self.loadPage(self.page_index + 1)
 
     def prev_page(self):
-        #if len(self.page_splitpoints) > self.page_splitindex:
-            self.page_splitindex = 0
-            self.loadPage(self.page_index - 1)
+        self.page_splitindex = 0
+        self.loadPage(self.page_index - 1)
 
 class DocumentWidgetScrollArea(QScrollArea):
     def resizeEvent(self, ev):

@@ -69,8 +69,8 @@ class PlaylistWidget(QWidget):
         addButton("Move down", lambda x: self.mv(+1))
         addButton("Delete", lambda x: self.delete())
         addButton("Add", self.add)
-        addButton("Prev",lambda x: self.app.pc.playlist_item_set(off=-1))
-        addButton("Next",lambda x: self.app.pc.playlist_item_set(off=+1))
+        addButton("Prev", lambda x: self.app.pc.playlist_item_set(off=-1))
+        addButton("Next", lambda x: self.app.pc.playlist_item_set(off=+1))
         layout.addSpacing(40)
 
         addButton("Next page", lambda x: self.gp.document.next_page())

@@ -7,7 +7,7 @@ import urllib.parse
 
 
 class PlaylistClient():
-    def __init__(self, url, prefix = '', currentBand=1):
+    def __init__(self, url, prefix='', currentBand=1):
         addr = urllib.parse.urlsplit(url)
         secure = "s" if addr.scheme == 'https' else ""
         self._addr = f"{addr.scheme}://{addr.netloc}"
@@ -47,7 +47,7 @@ class PlaylistClient():
             if msg.type == aiohttp.WSMsgType.TEXT:
                 text = msg.data
                 if text.startswith("client:"):
-                    _,req, jdata = text.split(":", 2)
+                    _, req, jdata = text.split(":", 2)
                     data = json.JSONDecoder().decode(jdata)
                     if msgid is None or req == msgid:
                         return req, data
@@ -109,13 +109,13 @@ class PlaylistClient():
     def playlist_item_move(self, si, pos):
         self.send_msg('move', {'id': si, 'playlist_id': self.currentPlaylistId, 'pos': pos})
 
-    def playlist_item_set(self, id = None, off = None):
+    def playlist_item_set(self, id=None, off=None):
         self.send_msg('play', {'id': id, 'playlist_id': self.currentPlaylistId, 'off': off})
 
-    def send_msg(self, msg, data = {}):
+    def send_msg(self, msg, data={}):
         self._queue.put_nowait(f'{msg}:' + json.JSONEncoder().encode(data))
 
-    async def send_msg_async(self, msg: str, data = {}):
+    async def send_msg_async(self, msg: str, data={}):
         await self.ws.send_str(f"client:{msg}:" + json.JSONEncoder().encode(data))
 
     async def get_messages(self):
@@ -141,6 +141,5 @@ class PlaylistClient():
         j = data
         j = {int(k): v for k, v in j.items()}
         j = {k: v for k, v in j.items()}
-        [j[k].update({'id':k}) for k in j.keys()]
+        [j[k].update({'id': k}) for k in j.keys()]
         return j
-
