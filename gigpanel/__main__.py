@@ -24,7 +24,7 @@ from PyQt5.QtWidgets import QApplication
 import midibox.backends as mb_backends
 
 from .window import GigPanelWindow
-from .playlist import PlaylistClient
+from .playlist import LivelistPlaylistClient, LocalPlaylistClient
 
 os.environ['QT_STYLE_OVERRIDE'] = 'Breeze'
 
@@ -39,6 +39,7 @@ def parse_args(self):
     parser.add_argument("-c", "--config", help="Configuration file", default=defconfig)
     parser.add_argument("-m", "--midibox", help="Midibox configuration in config file")
     parser.add_argument("-f", "--fullscreen", help="Show in fullscreen mode", action='store_true')
+    parser.add_argument("-p", "--playlist_client", help="Playlist client", default=None)
     parser.add_argument("--edit_splitpoints", help="Edit splitpoints", action='store_true')
     parser.add_argument("--edit-bounding-box", help="Edit bounding box", action='store_true')
     parser.add_argument("qt", nargs='*')
@@ -88,8 +89,14 @@ async def _main():
     app.midibox = create_midibox(app)
 
     # Playlist setup
-    cfg_pc = cfg['playlistClients'][cfg['defaultPlaylistClient']]
-    app.pc = PlaylistClient(cfg_pc.get("url"), currentBand=cfg_pc['currentBand'])
+    defaultPC = args.playlist_client or cfg['defaultPlaylistClient']
+    cfg_pc = cfg['playlistClients'][defaultPC]
+    playlist_client_class = {
+        "livelist": LivelistPlaylistClient,
+        "local": LocalPlaylistClient,
+    }.get(cfg_pc.get("pc_type"), LivelistPlaylistClient)
+
+    app.pc = playlist_client_class(**cfg_pc)
 
     gpwindow = GigPanelWindow(cfg_pc, app)
     gpwindow.show()

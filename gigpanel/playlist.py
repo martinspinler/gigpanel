@@ -7,7 +7,43 @@ import urllib.parse
 
 
 class PlaylistClient():
-    def __init__(self, url, prefix='', currentBand=1):
+    def __init__(self, **kwargs):
+        self._cbs = []
+
+    def add_callback(self, cb):
+        self._cbs.append(cb)
+
+    async def connect(self):
+        pass
+
+    async def get_db(self):
+        pass
+
+    async def get_playlist(self):
+        pass
+
+    def disconnect(self):
+        pass
+
+    def playlist_item_add(self, si):
+        pass
+
+    def playlist_item_del(self, si):
+        pass
+
+    def playlist_item_move(self, si, pos):
+        pass
+
+    def playlist_item_set(self, id=None, off=None):
+        pass
+
+    async def get_messages(self):
+        pass
+
+
+class LivelistPlaylistClient(PlaylistClient):
+    def __init__(self, url=None, prefix='', currentBand=1, **kwargs):
+        super().__init__()
         addr = urllib.parse.urlsplit(url)
         secure = "s" if addr.scheme == 'https' else ""
         self._addr = f"{addr.scheme}://{addr.netloc}"
@@ -15,10 +51,7 @@ class PlaylistClient():
         self._prefix = prefix
         self._queue = asyncio.Queue()
         self._currentBand = currentBand
-        self._cbs = []
 
-    def add_callback(self, cb):
-        self._cbs.append(cb)
 
     async def _receive_msg(self, msgid):
         i = 0
@@ -151,3 +184,8 @@ class PlaylistClient():
             cb("_update_db", j)
 
         return j
+
+
+class LocalPlaylistClient(PlaylistClient):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
