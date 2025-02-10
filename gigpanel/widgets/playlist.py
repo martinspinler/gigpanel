@@ -3,6 +3,7 @@ import os
 from PyQt5.QtWidgets import QWidget, QListWidget, QListWidgetItem, QHBoxLayout, QVBoxLayout, QPushButton
 from . import SongListDialog
 
+
 class QListWidgetWithId(QListWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

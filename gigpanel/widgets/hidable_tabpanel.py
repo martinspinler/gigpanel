@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QSizePolicy, QScrollArea, QAbs
 
 from PyQt5.QtCore import QPropertyAnimation, QParallelAnimationGroup
 
+
 class HidableTabWidget(QScrollArea):
     def __init__(self, widget):
         super().__init__()

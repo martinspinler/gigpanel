@@ -143,7 +143,7 @@ class GigPanelWidget(QWidget):
 #                del song['filename']
 #
 #        p = []
-##        for i in self.playlist.playlist.findItems("*", Qt.MatchWildcard):
+# #      for i in self.playlist.playlist.findItems("*", Qt.MatchWildcard):
 #        for i in self.playlist.playlist.findItems("", Qt.MatchContains):
 #            p.append(i.song['name'])
 #
@@ -169,7 +169,8 @@ class GigPanelWindow(QMainWindow):
         self.gp.document.setClickCallback(self.onDocumentClick)
 
         self.midibox = app.midibox
-        view = MidiboxQuickWidget(app, self.midibox,
+        view = MidiboxQuickWidget(
+            app, self.midibox,
             **dict({'playlist_url': pcConfig['url']} if pcConfig.get('url') else {}),
             **dict({'config': app.midibox_widget_cfg} if app.midibox_widget_cfg else {}),
         )

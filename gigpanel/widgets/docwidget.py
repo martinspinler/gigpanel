@@ -139,8 +139,9 @@ class DocumentWidget(QLabel):
         mult = 2.1
         ps = self.page.pageSize()
 
-        yfrom = self.page_splitpoints[self.page_splitindex - 1] if len(self.page_splitpoints) > 0 and self.page_splitindex > 0 else 0
-        yto   = self.page_splitpoints[self.page_splitindex - 0] if len(self.page_splitpoints) > self.page_splitindex else ps.height() - yfrom
+        y1 = self.page_splitpoints[self.page_splitindex - 1] if len(self.page_splitpoints) > 0 and self.page_splitindex > 0 else 0
+        y2 = self.page_splitpoints[self.page_splitindex - 0] if len(self.page_splitpoints) > self.page_splitindex else ps.height() - y1
+        yfrom, yto = y1, y2
 
         if self.mode == self.MODE_SET_SPLITPOINTS:
             yfrom, yto = 0, ps.height()
@@ -182,10 +183,10 @@ class DocumentWidget(QLabel):
                 p.drawLine(bb[0], bb[1], ps.width() - bb[0], bb[1])
                 p.drawLine(bb[0], bb[1], bb[0], ps.height() - bb[1])
             elif len(bb) == 4:
-                p.drawLine(bb[0], bb[1], bb[2], bb[1]) #T
-                p.drawLine(bb[0], bb[1], bb[0], bb[3]) #L
-                p.drawLine(bb[0], bb[3], bb[2], bb[3]) #B
-                p.drawLine(bb[2], bb[1], bb[2], bb[3]) #R
+                p.drawLine(bb[0], bb[1], bb[2], bb[1])  # T
+                p.drawLine(bb[0], bb[1], bb[0], bb[3])  # L
+                p.drawLine(bb[0], bb[3], bb[2], bb[3])  # B
+                p.drawLine(bb[2], bb[1], bb[2], bb[3])  # R
             p.end()
 
         self.setPixmap(pixmap)
@@ -230,6 +231,7 @@ class DocumentWidget(QLabel):
     def prev_page(self):
         self.page_splitindex = 0
         self.loadPage(self.page_index - 1)
+
 
 class DocumentWidgetScrollArea(QScrollArea):
     def resizeEvent(self, ev):

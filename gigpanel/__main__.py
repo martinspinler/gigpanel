@@ -28,6 +28,7 @@ from .playlist import PlaylistClient
 
 os.environ['QT_STYLE_OVERRIDE'] = 'Breeze'
 
+
 def parse_args(self):
     if platformdirs is not None:
         defconfig = (platformdirs.user_config_path("gigpanel") / "config.yaml").resolve()

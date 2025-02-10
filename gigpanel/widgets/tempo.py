@@ -48,6 +48,7 @@ class TempoWidget(QWidget):
             self.tempoBtns[st].setChecked(False)
             self.tempoBtns[((st + 1) % len(self.tempoBtns))].setChecked(True)
 
+
 class TabTempoWidget(QWidget):
     def __init__(self):
         QWidget.__init__(self)
