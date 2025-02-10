@@ -1,9 +1,10 @@
+from typing import Any
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QPushButton, QLabel
 from PyQt5.QtCore import Qt, QTimer
 
 
 class TempoWidget(QWidget):
-    def __init__(self):
+    def __init__(self) -> None:
         QWidget.__init__(self)
 
         self.timer = QTimer()
@@ -27,7 +28,7 @@ class TempoWidget(QWidget):
             layout.setStretchFactor(btn, 4)
         self.setLayout(layout)
 
-    def setTempo(self, bpm):
+    def setTempo(self, bpm: float) -> None:
         if bpm:
             self.timer.start()
             self.timer.setInterval(60000 // bpm)
@@ -36,7 +37,7 @@ class TempoWidget(QWidget):
             self.timer.stop()
             self.tempoText.setText("")
 
-    def tempoTimeout(self, *args):
+    def tempoTimeout(self, *args: Any) -> None:
         st = None
         for i in range(len(self.tempoBtns)):
             if self.tempoBtns[i].isChecked():
@@ -48,8 +49,9 @@ class TempoWidget(QWidget):
             self.tempoBtns[st].setChecked(False)
             self.tempoBtns[((st + 1) % len(self.tempoBtns))].setChecked(True)
 
+
 class TabTempoWidget(QWidget):
-    def __init__(self):
+    def __init__(self) -> None:
         QWidget.__init__(self)
 
         self.tempo = TempoWidget()

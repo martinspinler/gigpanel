@@ -17,7 +17,7 @@ class DocumentWidget(QLabel):
     MODE_SET_SPLITPOINTS = 1
     MODE_SET_BOUNDING_BOX = 2
 
-    def __init__(self, gp, app):
+    def __init__(self, gp, app) -> None:
         QLabel.__init__(self, gp)
         self.setObjectName("DocumentWidget")
         self.gp = gp
@@ -39,7 +39,7 @@ class DocumentWidget(QLabel):
 
         self._click_callback = None
 
-    def loadSong(self, song):
+    def loadSong(self, song) -> None:
         doc = popplerqt5.Poppler.Document
         self.sect = 0
         self.song = song
@@ -61,7 +61,7 @@ class DocumentWidget(QLabel):
                 pass
                 #midibox.setRegistration(song['Scenes'][0]['Registration'])
 
-    def mouseMoveEvent(self, e):
+    def mouseMoveEvent(self, e) -> None:
         x = int(e.localPos().x())
         y = int(e.localPos().y())
         if self.mode == self.MODE_SET_BOUNDING_BOX and len(self.bb) == 2:
@@ -71,7 +71,7 @@ class DocumentWidget(QLabel):
             #self.update()
             pass
 
-    def mouseReleaseEvent(self, e):
+    def mouseReleaseEvent(self, e) -> None:
         x = int(e.localPos().x())
         y = int(e.localPos().y())
         if self.mode == self.MODE_SET_BOUNDING_BOX:
@@ -90,7 +90,7 @@ class DocumentWidget(QLabel):
             self.song['Pages'][self.page_index]['BoundingBox'] = s
             self.bb = []
 
-    def mousePressEvent(self, e):
+    def mousePressEvent(self, e) -> None:
         pos = e.localPos()
         x = int(pos.x())
         y = int(pos.y())
@@ -113,7 +113,7 @@ class DocumentWidget(QLabel):
                 else:
                     self.prev_page()
 
-    def loadPage(self, index):
+    def loadPage(self, index) -> None:
         if not self.document:
             return
 
@@ -139,8 +139,10 @@ class DocumentWidget(QLabel):
         mult = 2.1
         ps = self.page.pageSize()
 
-        yfrom = self.page_splitpoints[self.page_splitindex - 1] if len(self.page_splitpoints) > 0 and self.page_splitindex > 0 else 0
-        yto   = self.page_splitpoints[self.page_splitindex - 0] if len(self.page_splitpoints) > self.page_splitindex else ps.height() - yfrom
+        sp = self.page_splitpoints
+        si = self.page_splitindex
+        yfrom = sp[si - 1] if len(sp) > 0 and si > 0 else 0
+        yto = sp[si - 0] if len(sp) > si else ps.height() - yfrom
 
         if self.mode == self.MODE_SET_SPLITPOINTS:
             yfrom, yto = 0, ps.height()
@@ -182,10 +184,10 @@ class DocumentWidget(QLabel):
                 p.drawLine(bb[0], bb[1], ps.width() - bb[0], bb[1])
                 p.drawLine(bb[0], bb[1], bb[0], ps.height() - bb[1])
             elif len(bb) == 4:
-                p.drawLine(bb[0], bb[1], bb[2], bb[1]) #T
-                p.drawLine(bb[0], bb[1], bb[0], bb[3]) #L
-                p.drawLine(bb[0], bb[3], bb[2], bb[3]) #B
-                p.drawLine(bb[2], bb[1], bb[2], bb[3]) #R
+                p.drawLine(bb[0], bb[1], bb[2], bb[1])  # T
+                p.drawLine(bb[0], bb[1], bb[0], bb[3])  # L
+                p.drawLine(bb[0], bb[3], bb[2], bb[3])  # B
+                p.drawLine(bb[2], bb[1], bb[2], bb[3])  # R
             p.end()
 
         self.setPixmap(pixmap)
@@ -219,19 +221,20 @@ class DocumentWidget(QLabel):
                      QPoint(find_nonwhite_row(arr_col, True),
                             find_nonwhite_row(arr_row, True)))
 
-    def onResize(self, re):
+    def onResize(self, re) -> None:
         self.setFixedSize(re)
         self.loadPage(self.page_index)
 
-    def next_page(self):
+    def next_page(self) -> None:
         self.page_splitindex = 0
         self.loadPage(self.page_index + 1)
 
-    def prev_page(self):
+    def prev_page(self) -> None:
         self.page_splitindex = 0
         self.loadPage(self.page_index - 1)
 
+
 class DocumentWidgetScrollArea(QScrollArea):
-    def resizeEvent(self, ev):
+    def resizeEvent(self, ev) -> None:
         super(QScrollArea, self).resizeEvent(ev)
         self.document.onResize(self.size())

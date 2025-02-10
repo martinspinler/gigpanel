@@ -8,6 +8,8 @@ import yaml
 import qasync
 import argparse
 
+from typing import Any, Tuple
+
 try:
     import platformdirs as _platformdirs
 except ModuleNotFoundError:
@@ -21,6 +23,7 @@ else:
 from PyQt5.QtCore import QCommandLineParser
 from PyQt5.QtWidgets import QApplication
 
+from midibox.controller import BaseMidibox
 import midibox.backends as mb_backends
 
 from .window import GigPanelWindow
@@ -28,7 +31,11 @@ from .playlist import PlaylistClient
 
 os.environ['QT_STYLE_OVERRIDE'] = 'Breeze'
 
-def parse_args(self):
+from .app import Application
+
+
+
+def parse_args(app: Application) -> argparse.Namespace:
     if platformdirs is not None:
         defconfig = (platformdirs.user_config_path("gigpanel") / "config.yaml").resolve()
     else:
@@ -42,30 +49,29 @@ def parse_args(self):
     parser.add_argument("--edit-bounding-box", help="Edit bounding box", action='store_true')
     parser.add_argument("qt", nargs='*')
 
-    app = self
-    app.parser = QCommandLineParser()
-    app.parser.addHelpOption()
+    qparser = QCommandLineParser()
+    qparser.addHelpOption()
     args = parser.parse_args()
-    app.parser.process([sys.argv[0]] + args.qt)
+    qparser.process([sys.argv[0]] + args.qt)
     return args
 
 
-def init_loop(app):
+def init_loop(app: Application):  # type: ignore
     loop = asyncio.get_event_loop()
-    future = asyncio.Future()
+    future = asyncio.Future()  # type: ignore
 
-    def close_future(future, loop):
+    def close_future(future, loop) -> None:  # type: ignore
         app.pc.disconnect()
         app.midibox.disconnect()
         future.cancel()
 
-    if hasattr(app, "aboutToQuit"):
-        getattr(app, "aboutToQuit").connect(functools.partial(close_future, future, loop))
+    if hasattr(app.qapp, "aboutToQuit"):
+        getattr(app.qapp, "aboutToQuit").connect(functools.partial(close_future, future, loop))
 
     return loop, future
 
 
-def create_midibox(app):
+def create_midibox(app: Application) -> BaseMidibox:
     mb_cfg_node = app.config.get("midibox", {})
     mb_cfg_name = app.args.midibox or mb_cfg_node.get("default-configuration")
     app.mb_cfg = mb_cfg = mb_cfg_node.get("configurations", {}).get(mb_cfg_name, {})
@@ -74,15 +80,17 @@ def create_midibox(app):
     else:
         app.midibox_widget_cfg = {}
 
-    return mb_backends.create_midibox_from_config(mb_cfg.get('backend', mb_backends.default_backend), **mb_cfg.get('backend-params', {}))
+    mb_backend = mb_cfg.get('backend', mb_backends.default_backend)
+    mb_backend_params = mb_cfg.get('backend-params', {})
+    return mb_backends.create_midibox_from_config(mb_backend, **mb_backend_params)
 
 
-async def _main():
-    global app
-    app = QApplication.instance()
-    args = app.args = parse_args(app)
+async def amain() -> None:
+    app = Application()
+    app.qapp = QApplication.instance() # type: ignore
+    app.args = parse_args(app)
 
-    cfg = app.config = yaml.load(open(args.config).read(), yaml.Loader)
+    cfg = app.config = yaml.load(open(app.args.config).read(), yaml.Loader)
 
     app.midibox = create_midibox(app)
 
@@ -117,7 +125,7 @@ async def _main():
         pass
 
 
-def main():
+def main() -> None:
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     use_qasync_workaround = True
     try:
@@ -125,11 +133,11 @@ def main():
             with qasync._set_event_loop_policy(qasync.DefaultQEventLoopPolicy()):
                 runner = asyncio.runners.Runner()
                 try:
-                    runner.run(_main())
+                    runner.run(amain())
                 finally:
                     runner.close()
         else:
-            qasync.run(_main())
+            qasync.run(amain())
     except asyncio.exceptions.CancelledError:
         sys.exit(0)
 

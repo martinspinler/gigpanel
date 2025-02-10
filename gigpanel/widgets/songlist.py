@@ -1,9 +1,10 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QAbstractItemView, QListWidget, QListWidgetItem, QFileIconProvider, QGridLayout, QSizePolicy
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QAbstractItemView
+from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFileIconProvider, QGridLayout, QSizePolicy
 from PyQt5.QtCore import Qt, QFile, QItemSelectionModel, QRegExp
 
 
 class SonglistItem(QListWidgetItem):
-    def __init__(self, song):
+    def __init__(self, song) -> None:
         QListWidgetItem.__init__(self, song['name'])
         self.song = song
         self.file_exists = False
@@ -19,19 +20,19 @@ class SonglistItem(QListWidgetItem):
 
 
 class SongListWidget(QListWidget):
-    def __init__(self, songs):
+    def __init__(self, songs) -> None:
         QListWidget.__init__(self)
         #self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.setSelectionMode(QAbstractItemView.MultiSelection)
         self.loadSongs(songs)
 
-    def loadSongs(self, songs):
+    def loadSongs(self, songs) -> None:
         #for song in db['Songs'].values():
         for song in songs.values():
             sli = SonglistItem(song)
             self.addItem(sli)
 
-    def findSong(self, filter_string=""):
+    def findSong(self, filter_string="") -> None:
         re = QRegExp(filter_string)
         re.setCaseSensitivity(Qt.CaseInsensitive)
         for i in self.findItems("", Qt.MatchContains):
@@ -42,9 +43,37 @@ class SongListWidget(QListWidget):
 
 
 class SongListDialog(QDialog):
-    nummap = {'1': ".1", '2': "2aábcč", '3': "3dďeéf", '4': "4ghií", '5': "5jkl", '6': "6mnňoó", '7': "7pqrřsš", '8': "8tťuúův", '9': "9wxyýzž", '0': "0 "}
+    nummap = {
+        '1': ".1",
+        '2': "2aábcč",
+        '3': "3dďeéf",
+        '4': "4ghií",
+        '5': "5jkl",
+        '6': "6mnňoó",
+        '7': "7pqrřsš",
+        '8': "8tťuúův",
+        '9': "9wxyýzž",
+        '0': "0 ",
+    }
 
-    def __init__(self, gp, app):
+    keypad = [
+        (0x1, 0, 0, "1 *"),
+        (0x2, 0, 1, "2 ABC"),
+        (0x3, 0, 2, "3 DEF"),
+        (0x4, 1, 0, "4 GHI"),
+        (0x5, 1, 1, "5 JKL"),
+        (0x6, 1, 2, "6 MNO"),
+        (0x7, 2, 0, "7 PQRS"),
+        (0x8, 2, 1, "8 TUV"),
+        (0x9, 2, 2, "9 WXYZ"),
+        (0x9, 3, 1, "0"),
+        (0x0, 3, 0, "CLEAR"),
+        (0xD, 3, 2, "SEL"),
+        (0xA, 1, 3, "UP"),
+        (0xB, 2, 3, "DOWN"),
+    ]
+
+    def __init__(self, gp, app) -> None:
         QDialog.__init__(self)
         self.gp = gp
 
@@ -76,23 +105,7 @@ class SongListDialog(QDialog):
         btn.clicked.connect(lambda ch: self.reject())
         v.addWidget(btn)
 
-        keypad = [
-            ("1 *",    1, 0, 0),
-            ("2 ABC",  2, 0, 1),
-            ("3 DEF",  3, 0, 2),
-            ("4 GHI",  4, 1, 0),
-            ("5 JKL",  5, 1, 1),
-            ("6 MNO",  6, 1, 2),
-            ("7 PQRS", 7, 2, 0),
-            ("8 TUV",  8, 2, 1),
-            ("9 WXYZ", 9, 2, 2),
-            ("0 WXYZ", 9, 3, 1),
-            ("CLEAR",  0, 3, 0),
-            ("SEL",  0xD, 3, 2),
-            ("UP",   0xA, 1, 3),
-            ("DOWN", 0xB, 2, 3),
-        ]
-        for text, data, x, y in keypad:
+        for data, x, y, text in SongListDialog.keypad:
             btn = QPushButton(text)
             btn.clicked.connect(lambda ch, d=data: self.btnpress(d))
             btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -102,7 +115,7 @@ class SongListDialog(QDialog):
         self.filter_string = ""
         self.filter_btns = []
 
-    def btnpress(self, btn):
+    def btnpress(self, btn) -> None:
         self.ext_input(btn)
 
     def get_songs(self):
@@ -115,7 +128,7 @@ class SongListDialog(QDialog):
         else:
             return None
 
-    def ext_input(self, btn):
+    def ext_input(self, btn) -> None:
         filter_btns = self.filter_btns.copy()
         if btn >= 1 and btn <= 9:
             filter_btns.append(chr(ord('0') + btn))
@@ -123,7 +136,8 @@ class SongListDialog(QDialog):
             filter_btns = filter_btns[:-1]
             filter_btns = []
         elif btn == 0x0A or btn == 0x0B:
-            self.songlist.setCurrentRow(self.songlist.currentRow() + (1 if btn == 0x0B else -1), QItemSelectionModel.Current)
+            row = self.songlist.currentRow() + (1 if btn == 0x0B else -1)
+            self.songlist.setCurrentRow(row, QItemSelectionModel.Current)
             self.songlist.setFocus()
         elif btn == 0x0D:
             sm = self.songlist.selectionModel()

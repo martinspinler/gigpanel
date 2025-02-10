@@ -2,8 +2,9 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QSizePolicy, QScrollArea, QAbs
 
 from PyQt5.QtCore import QPropertyAnimation, QParallelAnimationGroup
 
+
 class HidableTabWidget(QScrollArea):
-    def __init__(self, widget):
+    def __init__(self, widget) -> None:
         super().__init__()
 
         contentArea = self
@@ -24,7 +25,7 @@ class HidableTabWidget(QScrollArea):
 
 
 class HidableTabPanel(QWidget):
-    def __init__(self, title=""):
+    def __init__(self, title="") -> None:
         QWidget.__init__(self)
 
         tabBar = QTabBar()
@@ -42,7 +43,7 @@ class HidableTabPanel(QWidget):
 
         tabBar.currentChanged.connect(self.on_tab_changed)
 
-    def addTab(self, name, widget):
+    def addTab(self, name, widget) -> None:
         self.tb.addTab(name)
         w = HidableTabWidget(widget)
 
@@ -52,7 +53,7 @@ class HidableTabPanel(QWidget):
         if len(self.content) == 1:
             self.on_tab_changed(0)
 
-    def _animate(self, animation, startHeight, endHeight):
+    def _animate(self, animation, startHeight, endHeight) -> None:
         animationDuration = 100
         for i in range(animation.animationCount() - 1):
             SectionAnimation = animation.animationAt(i)
@@ -66,7 +67,7 @@ class HidableTabPanel(QWidget):
         contentAnimation.setEndValue(endHeight)
         animation.start()
 
-    def on_tab_changed(self, index):
+    def on_tab_changed(self, index) -> None:
         if not self.content:
             return
 

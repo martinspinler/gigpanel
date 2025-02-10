@@ -2,6 +2,7 @@
 
 
 #import warnings
+from .app import Application, Song
 from .widgets import DocumentWidget, DocumentWidgetScrollArea
 from .widgets import PlaylistWidget
 from .widgets import HidableTabPanel, TabTempoWidget
@@ -14,20 +15,20 @@ from PyQt5.QtCore import QSettings
 from midibox.widget import MidiboxQuickWidget
 
 
-def set_style(app):
-    def style_fs(w, h):
+def set_style(app: Application) -> None:
+    def style_fs(w: int, h: int) -> str:
         ws = f"min-width:{w}px;max-width:{w}px;" if w is not None else ""
         hs = f"min-height:{h}px;max-height:{h}px;" if h is not None else ""
         return ws + hs
 
-    def style_fs2(w, h):
+    def style_fs2(w: int, h: int) -> str:
         ws = f"max-width:{w}px;" if w is not None else ""
         hs = f"max-height:{h}px;" if h is not None else ""
         return ws + hs
 
     style = ""
 
-    r = app.screens()[0].geometry()
+    r = app.qapp.screens()[0].geometry()
     app.horizontal = r.width() > r.height()
 
     if app.args.fullscreen:
@@ -60,11 +61,12 @@ def set_style(app):
     style += " QPushButton#tempoButton1{background-color: yellow; font: 64px;}"
     style += " QPushButton#tempoButton:checked{background-color: blue;}"
     style += " QPushButton#tempoButton1:checked{background-color: red;}"
-    app.setStyleSheet(style)
+    app.qapp.setStyleSheet(style)
 
 
-def song_update_path(song, app):
-    store = app.config['stores'][song['store']] if ('store' in song and song['store'] is not None) else app.config['stores'][app.config['defaultStore']]
+def song_update_path(song: Song, app: Application) -> None:
+    st = song['store'] if song.get('store') is not None else app.config['defaultStore']
+    store = app.config['stores'][st]
 
     file = song.get('filename')
 
@@ -76,7 +78,8 @@ def song_update_path(song, app):
     if (song['filename'] is None or not QFile(song['filename']).exists()) and 'pattern' in store:
         for fn in ([file] if file else []) + [song['name']]:
             for instrument in ['-Piano', ' - Piano', '-Electric_Piano', ' Piano', '']:
-                filename = app.config['prefixes'][store['prefix']] + store['pattern'].format(name=fn, instrument=instrument)
+                pattern = store['pattern'].format(name=fn, instrument=instrument)
+                filename = app.config['prefixes'][store['prefix']] + pattern
                 if QFile(filename).exists():
                     song['filename'] = filename
                     break
@@ -86,7 +89,7 @@ def song_update_path(song, app):
 
 
 class GigPanelWidget(QWidget):
-    def __init__(self, wnd, app):
+    def __init__(self, wnd: QMainWindow, app: Application) -> None:
         QWidget.__init__(self)
         self.app = app
         self.wnd = wnd
@@ -127,23 +130,23 @@ class GigPanelWidget(QWidget):
 
         self.songs = {}
 
-    def loadSong(self, song):
+    def loadSong(self, song) -> None:
         if 'filename' in song and song['filename']:
             self.document.loadSong(song)
 
-    def loadSongs(self, songs):
+    def loadSongs(self, songs) -> None:
         self.songs = songs
         for song in songs.values():
             song_update_path(song, self.app)
 
-    def storeDb(self):
+    def storeDb(self) -> None:
         pass
 #        for song in self.db["Songs"]:
 #            if 'filename' in song:
 #                del song['filename']
 #
 #        p = []
-##        for i in self.playlist.playlist.findItems("*", Qt.MatchWildcard):
+# #        for i in self.playlist.playlist.findItems("*", Qt.MatchWildcard):
 #        for i in self.playlist.playlist.findItems("", Qt.MatchContains):
 #            p.append(i.song['name'])
 #
@@ -156,7 +159,7 @@ class GigPanelWidget(QWidget):
 
 
 class GigPanelWindow(QMainWindow):
-    def __init__(self, pcConfig, app):
+    def __init__(self, pcConfig, app: Application) -> None:
         set_style(app)
 
         QMainWindow.__init__(self)
@@ -169,7 +172,8 @@ class GigPanelWindow(QMainWindow):
         self.gp.document.setClickCallback(self.onDocumentClick)
 
         self.midibox = app.midibox
-        view = MidiboxQuickWidget(app, self.midibox,
+        view = MidiboxQuickWidget(
+            app, self.midibox,
             **dict({'playlist_url': pcConfig['url']} if pcConfig.get('url') else {}),
             **dict({'config': app.midibox_widget_cfg} if app.midibox_widget_cfg else {}),
         )
@@ -211,13 +215,13 @@ class GigPanelWindow(QMainWindow):
         app.pc.add_callback(self.gp.playlist.livelist_client_cb)
         app.pc.add_callback(self.livelist_client_cb)
 
-    def livelist_client_cb(self, cmd, data):
+    def livelist_client_cb(self, cmd, data) -> None:
         if cmd == "_update_db":
             self.gp.loadSongs(data)
         elif cmd == "_update_playlist":
             self.gp.playlist.load(data)
 
-    def onDocumentClick(self, pos, size):
+    def onDocumentClick(self, pos, size) -> None:
         visible = self.dwIsVisible()
         if visible or pos.y() > int(size.height() * 0.9):
             self.dwSetVisible(not visible, 2 if pos.x() > self.width() // 2 else 1)
@@ -225,7 +229,7 @@ class GigPanelWindow(QMainWindow):
         else:
             return False
 
-    def midicb(self, msg):
+    def midicb(self, msg) -> None:
         if msg.type == 'control_change':
             if msg.is_cc(16) and msg.value > 64:
                 self.gp.playlist.gp.document.prev_page()
@@ -234,15 +238,15 @@ class GigPanelWindow(QMainWindow):
             if msg.is_cc(18) and msg.value > 64:
                 self.mbview.qmidibox.transpositionExtra = not self.mbview.qmidibox.transpositionExtra
 
-    def closeEvent(self, event):
+    def closeEvent(self, event) -> None:
         settings = QSettings("cz.spinler", "gigpanel")
         if not self.app.args.fullscreen:
             settings.setValue("geometry", self.saveGeometry())
         #settings.setValue("windowState", self.saveState())
         super().closeEvent(event)
 
-    def dwSetVisible(self, v: bool, index=1):
+    def dwSetVisible(self, v: bool, index=1) -> None:
         self.hw.tb.setCurrentIndex(index if v else 0)
 
-    def dwIsVisible(self):
+    def dwIsVisible(self) -> bool:
         return self.hw.tb.currentIndex() > 0

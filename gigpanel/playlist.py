@@ -5,9 +5,11 @@ import aiohttp
 import ssl
 import urllib.parse
 
+from typing import Any
+
 
 class PlaylistClient():
-    def __init__(self, url, prefix='', currentBand=1):
+    def __init__(self, url, prefix='', currentBand=1) -> None:
         addr = urllib.parse.urlsplit(url)
         secure = "s" if addr.scheme == 'https' else ""
         self._addr = f"{addr.scheme}://{addr.netloc}"
@@ -17,7 +19,7 @@ class PlaylistClient():
         self._currentBand = currentBand
         self._cbs = []
 
-    def add_callback(self, cb):
+    def add_callback(self, cb) -> None:
         self._cbs.append(cb)
 
     async def _receive_msg(self, msgid):
@@ -74,7 +76,7 @@ class PlaylistClient():
                 print(msg.type)
         return None, None
 
-    async def connect(self):
+    async def connect(self) -> None:
         self.session = aiohttp.ClientSession()
         ssl._create_default_https_context = ssl._create_unverified_context
         self.context = ssl._create_unverified_context()
@@ -87,38 +89,38 @@ class PlaylistClient():
             t1 = await resp.text()
         await self._reconnect()
 
-    async def _reconnect(self):
+    async def _reconnect(self) -> None:
         self.ws = await self.session.ws_connect(f'{self._wsaddr}/client/', ssl=self.context, headers=self.headers)
         msg = f"""lona:[1,null,101,["{self._prefix}/client/",null]]"""
 
         await self.ws.send_str(msg)
 
-    async def _disconnect(self):
+    async def _disconnect(self) -> None:
         await self.ws.close()
         await self.session.close()
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         self._queue.put_nowait('close')
 
-    def playlist_item_add(self, si):
+    def playlist_item_add(self, si) -> None:
         self.send_msg('add', {'song_id': si.song['id'], 'playlist_id': self.currentPlaylistId})
 
-    def playlist_item_del(self, si):
+    def playlist_item_del(self, si) -> None:
         self.send_msg('delete', {'id': si, 'playlist_id': self.currentPlaylistId})
 
-    def playlist_item_move(self, si, pos):
+    def playlist_item_move(self, si, pos) -> None:
         self.send_msg('move', {'id': si, 'playlist_id': self.currentPlaylistId, 'pos': pos})
 
-    def playlist_item_set(self, id=None, off=None):
+    def playlist_item_set(self, id=None, off=None) -> None:
         self.send_msg('play', {'id': id, 'playlist_id': self.currentPlaylistId, 'off': off})
 
-    def send_msg(self, msg, data={}):
+    def send_msg(self, msg, data={}) -> None:
         self._queue.put_nowait(f'{msg}:' + json.JSONEncoder().encode(data))
 
-    async def send_msg_async(self, msg: str, data={}):
+    async def send_msg_async(self, msg: str, data={}) -> None:
         await self.ws.send_str(f"client:{msg}:" + json.JSONEncoder().encode(data))
 
-    async def get_messages(self):
+    async def get_messages(self) -> None:
         req = True if hasattr(self, 'ws') else False
         while req:
             req, data = await self._receive_msg(None)
@@ -126,16 +128,17 @@ class PlaylistClient():
                 for cb in self._cbs:
                     cb(req, data)
 
-    async def get_playlist(self):
+    async def get_playlist(self) -> dict[str, dict[Any]]:
         await self.send_msg_async("get-playlist", {'playlist_id': self.currentPlaylistId})
         _, data = await self._receive_msg('playlist')
 
         for cb in self._cbs:
             cb("_update_playlist", data)
 
+        print(data)
         return data
 
-    async def get_db(self):
+    async def get_db(self) -> dict[str, Any]:
         await self.send_msg_async("get-active-playlist", {'band_id': self._currentBand})
         _, data = await self._receive_msg('active-playlist')
         self.currentPlaylistId = data['playlist_id']
@@ -149,5 +152,6 @@ class PlaylistClient():
 
         for cb in self._cbs:
             cb("_update_db", j)
+
 
         return j
