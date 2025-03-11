@@ -1,40 +1,47 @@
-#!/usr/bin/python3
+from typing import Callable, Any
 
+import mido
 
-#import warnings
+from .song import Song
+from .app import Application
 from .widgets import DocumentWidget, DocumentWidgetScrollArea
 from .widgets import PlaylistWidget
-from .widgets import HidableTabPanel, TabTempoWidget
+from .widgets import HidableTabPanel, TabTempoWidget, TempoWidget
 
-from PyQt5.QtWidgets import QWidget, QMainWindow, QVBoxLayout, QStackedLayout, QDockWidget, QAbstractScrollArea
-from PyQt5.QtCore import Qt, QFile
+from PyQt5.QtWidgets import QWidget, QMainWindow, QVBoxLayout, QStackedLayout, QDockWidget
+from PyQt5.QtCore import Qt, QFile, QPoint, QSize
+from PyQt5.QtGui import QCloseEvent
 
 from PyQt5.QtCore import QSettings
 
 from midibox.widget import MidiboxQuickWidget
 
+from .playlist import PlaylistEventListener
+from .song import Songlist
 
-def set_style(app):
-    def style_fs(w, h):
+
+def set_style(app: Application) -> None:
+    def style_fs(w: int, h: int) -> str:
         ws = f"min-width:{w}px;max-width:{w}px;" if w is not None else ""
         hs = f"min-height:{h}px;max-height:{h}px;" if h is not None else ""
         return ws + hs
 
-    def style_fs2(w, h):
+    def style_fs2(w: int, h: int) -> str:
         ws = f"max-width:{w}px;" if w is not None else ""
         hs = f"max-height:{h}px;" if h is not None else ""
         return ws + hs
 
     style = ""
 
-    r = app.screens()[0].geometry()
-    app.horizontal = r.width() > r.height()
+    ac = app.appconfig
+    r = app.qapp.screens()[0].geometry()
+    ac.horizontal = r.width() > r.height()
 
-    if app.args.fullscreen:
+    if ac.args.fullscreen:
         font_size = 48
         #doc_w, doc_h = int(1080-240), int(1920)
         #doc_w, doc_h = int(1080), int(1920-240)
-        if app.horizontal:
+        if ac.horizontal:
             doc_w, doc_h = r.width() - 140, r.height()
         else:
             doc_w, doc_h = r.width(), r.height()
@@ -60,38 +67,39 @@ def set_style(app):
     style += " QPushButton#tempoButton1{background-color: yellow; font: 64px;}"
     style += " QPushButton#tempoButton:checked{background-color: blue;}"
     style += " QPushButton#tempoButton1:checked{background-color: red;}"
-    app.setStyleSheet(style)
+    app.qapp.setStyleSheet(style)
 
 
-def song_update_path(song, app):
-    store = app.config['stores'][song['store']] if ('store' in song and song['store'] is not None) else app.config['stores'][app.config['defaultStore']]
+def song_update_path(song: Song, app: Application) -> None:
+    st = song.store if song.store is not None else app.config['defaultStore']
+    store = app.config['stores'][st]
 
-    file = song.get('filename')
+    file = song.filename
 
     if file:
-        song['filename'] = app.config['prefixes'][store['prefix']] + store['path'] + file + store['suffix']
-    elif 'filename' not in song:
-        song['filename'] = None
+        song.filename = app.config['prefixes'][store['prefix']] + store['path'] + file + store['suffix']
 
-    if (song['filename'] is None or not QFile(song['filename']).exists()) and 'pattern' in store:
-        for fn in ([file] if file else []) + [song['name']]:
+    if (song.filename is None or not QFile(song.filename).exists()) and 'pattern' in store:
+        for fn in ([file] if file else []) + [song.name]:
             for instrument in ['-Piano', ' - Piano', '-Electric_Piano', ' Piano', '']:
-                filename = app.config['prefixes'][store['prefix']] + store['pattern'].format(name=fn, instrument=instrument)
+                pattern = store['pattern'].format(name=fn, instrument=instrument)
+                filename = app.config['prefixes'][store['prefix']] + pattern
                 if QFile(filename).exists():
-                    song['filename'] = filename
+                    song.filename = filename
                     break
             else:
                 continue
             break
 
 
-class GigPanelWidget(QWidget):
-    def __init__(self, wnd, app):
+class GigPanelWidget(PlaylistEventListener, QWidget):
+    def __init__(self, wnd: "GigPanelWindow", app: Application, tempo: TempoWidget) -> None:
         QWidget.__init__(self)
         self.app = app
         self.wnd = wnd
+        self.tempo = tempo
 
-        self.ext_input_cb = []
+        self.ext_input_cb: list[Callable[[int], None]] = []
         self.stacked_layout = QStackedLayout()
         self.setLayout(self.stacked_layout)
         self.stacked_layout.setStackingMode(QStackedLayout.StackAll)
@@ -106,14 +114,8 @@ class GigPanelWidget(QWidget):
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.document = DocumentWidget(self, app)
-        sa = DocumentWidgetScrollArea()
-        sa.document = self.document
-        sa.setWidget(self.document)
-        sa.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        sa.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        sa.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
-        sa.setWidgetResizable(True)
+        self.document = DocumentWidget(app.appconfig)
+        sa = DocumentWidgetScrollArea(self.document)
 
         self.stacked_layout.addWidget(sa)
 
@@ -121,29 +123,35 @@ class GigPanelWidget(QWidget):
         layout.addLayout(v)
 
         self.stacked_layout.setCurrentIndex(1)
-        self.playlist = PlaylistWidget(self, app, self.wnd)
+        self.playlist = PlaylistWidget(self.wnd, self, app)
+        app.pc.add_callback(self.playlist)
 
         self.stacked_layout.setCurrentIndex(0)
 
-        self.songs = {}
+        self.songs: dict[int, Song] = {} # TODO: Is key really int?
 
-    def loadSong(self, song):
-        if 'filename' in song and song['filename']:
+    def loadSong(self, song: Song) -> None:
+        if song.filename:
             self.document.loadSong(song)
+        if song.bpm:
+            self.tempo.setTempo(song.bpm)
 
-    def loadSongs(self, songs):
+    def loadSongs(self, songs: Songlist) -> None:
         self.songs = songs
         for song in songs.values():
             song_update_path(song, self.app)
 
-    def storeDb(self):
+    def pe_update_songlist(self, songlist: Songlist) -> None:
+        self.loadSongs(songlist)
+
+    def storeDb(self) -> None:
         pass
 #        for song in self.db["Songs"]:
 #            if 'filename' in song:
 #                del song['filename']
 #
 #        p = []
-# #      for i in self.playlist.playlist.findItems("*", Qt.MatchWildcard):
+# #        for i in self.playlist.playlist.findItems("*", Qt.MatchWildcard):
 #        for i in self.playlist.playlist.findItems("", Qt.MatchContains):
 #            p.append(i.song['name'])
 #
@@ -156,31 +164,33 @@ class GigPanelWidget(QWidget):
 
 
 class GigPanelWindow(QMainWindow):
-    def __init__(self, pcConfig, app):
+    def __init__(self, pcConfig: dict[str, Any], app: Application) -> None:
         set_style(app)
 
         QMainWindow.__init__(self)
         self.setWindowTitle('Gig panel')
         self.app = app
 
-        self.gp = GigPanelWidget(self, app)
+        self.tab_tempo = TabTempoWidget()
+        self.gp = GigPanelWidget(self, app, self.tab_tempo.tempo)
         self.setCentralWidget(self.gp)
 
         self.gp.document.setClickCallback(self.onDocumentClick)
 
         self.midibox = app.midibox
         view = MidiboxQuickWidget(
-            app, self.midibox,
+            app.qapp, self.midibox,
             **dict({'playlist_url': pcConfig['url']} if pcConfig.get('url') else {}),
             **dict({'config': app.midibox_widget_cfg} if app.midibox_widget_cfg else {}),
         )
+        app.pc.add_callback(self.gp)
+
+        #app.qapp.aboutToQuit.connect(e.deleteLater)
 
         self.midibox._callbacks.append(self.midicb)
         app.mbview = view
         self.mbview = view
 
-        self.tab_tempo = TabTempoWidget()
-        app.tempo = self.tab_tempo.tempo
         hw = HidableTabPanel()
         #hw.addTab("Hide", HidableTabWidget(QWidget()))
         hw.addTab("Tempo", self.tab_tempo)
@@ -204,21 +214,13 @@ class GigPanelWindow(QMainWindow):
         if ws:
             self.restoreState(ws.toByteArray())
 
-        if app.args.fullscreen:
+        ac = app.appconfig
+        if ac.args.fullscreen:
             self.setWindowState(Qt.WindowFullScreen)
 
         self.tab_tempo.btn_next.clicked.connect(lambda x: app.pc.playlist_item_set(off=+1))
 
-        app.pc.add_callback(self.gp.playlist.livelist_client_cb)
-        app.pc.add_callback(self.livelist_client_cb)
-
-    def livelist_client_cb(self, cmd, data):
-        if cmd == "_update_db":
-            self.gp.loadSongs(data)
-        elif cmd == "_update_playlist":
-            self.gp.playlist.load(data)
-
-    def onDocumentClick(self, pos, size):
+    def onDocumentClick(self, pos: QPoint, size: QSize) -> bool:
         visible = self.dwIsVisible()
         if visible or pos.y() > int(size.height() * 0.9):
             self.dwSetVisible(not visible, 2 if pos.x() > self.width() // 2 else 1)
@@ -226,7 +228,7 @@ class GigPanelWindow(QMainWindow):
         else:
             return False
 
-    def midicb(self, msg):
+    def midicb(self, msg: mido.Message) -> None:
         if msg.type == 'control_change':
             if msg.is_cc(16) and msg.value > 64:
                 self.gp.playlist.gp.document.prev_page()
@@ -235,15 +237,15 @@ class GigPanelWindow(QMainWindow):
             if msg.is_cc(18) and msg.value > 64:
                 self.mbview.qmidibox.transpositionExtra = not self.mbview.qmidibox.transpositionExtra
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent) -> None:
         settings = QSettings("cz.spinler", "gigpanel")
-        if not self.app.args.fullscreen:
+        if not self.app.appconfig.args.fullscreen:
             settings.setValue("geometry", self.saveGeometry())
         #settings.setValue("windowState", self.saveState())
         super().closeEvent(event)
 
-    def dwSetVisible(self, v: bool, index=1):
+    def dwSetVisible(self, v: bool, index: int = 1) -> None:
         self.hw.tb.setCurrentIndex(index if v else 0)
 
-    def dwIsVisible(self):
+    def dwIsVisible(self) -> bool:
         return self.hw.tb.currentIndex() > 0

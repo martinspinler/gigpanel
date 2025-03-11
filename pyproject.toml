@@ -23,5 +23,5 @@ gigpanel = "gigpanel.__main__:main"
 packages = ["gigpanel"]
 
 [[tool.mypy.overrides]]
-module = "popplerqt5,qasync,midibox.*"
+module = "popplerqt5,qasync,midibox.*,mido"
 ignore_missing_imports = true

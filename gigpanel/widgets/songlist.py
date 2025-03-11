@@ -1,37 +1,47 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QAbstractItemView, QListWidget, QListWidgetItem, QFileIconProvider, QGridLayout, QSizePolicy
+from typing import Optional
+
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QAbstractItemView
+from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFileIconProvider, QGridLayout, QSizePolicy
 from PyQt5.QtCore import Qt, QFile, QItemSelectionModel, QRegExp
+
+from ..app import Application
+from ..song import Song, Songlist
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..window import GigPanelWindow
 
 
 class SonglistItem(QListWidgetItem):
-    def __init__(self, song):
-        QListWidgetItem.__init__(self, song['name'])
+    def __init__(self, song: Song) -> None:
+        QListWidgetItem.__init__(self, song.name)
         self.song = song
         self.file_exists = False
 
-        if song['filename']:
-            if QFile(song['filename']).exists():
+        if song.filename:
+            if QFile(song.filename).exists():
                 self.file_exists = True
                 self.setIcon(QFileIconProvider().icon(QFileIconProvider.File))
             else:
                 self.setIcon(QFileIconProvider().icon(QFileIconProvider.Trashcan))
-        if 'Flags' in song:
-            self.setIcon(QFileIconProvider().icon(QFileIconProvider.Desktop))
+        #if 'Flags' in song:
+        #    self.setIcon(QFileIconProvider().icon(QFileIconProvider.Desktop))
 
 
 class SongListWidget(QListWidget):
-    def __init__(self, songs):
+    def __init__(self, songs: Songlist) -> None:
         QListWidget.__init__(self)
         #self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.setSelectionMode(QAbstractItemView.MultiSelection)
         self.loadSongs(songs)
 
-    def loadSongs(self, songs):
+    def loadSongs(self, songs: Songlist) -> None:
         #for song in db['Songs'].values():
         for song in songs.values():
             sli = SonglistItem(song)
             self.addItem(sli)
 
-    def findSong(self, filter_string=""):
+    def findSong(self, filter_string: str = "") -> None:
         re = QRegExp(filter_string)
         re.setCaseSensitivity(Qt.CaseInsensitive)
         for i in self.findItems("", Qt.MatchContains):
@@ -39,27 +49,6 @@ class SongListWidget(QListWidget):
             x = re.indexIn(i.text())
             if x >= 0:
                 i.setHidden(False)
-        self.advance_row(0)
-
-    def advance_row(self, pos=1):
-        cr = self.currentRow()
-        cr += pos
-        if pos == 0:
-            pos = 1
-
-        size = self.model().rowCount()
-        rev = False
-        hidden = self.isRowHidden(cr)
-        while hidden:
-            cr += pos
-            if cr < 0 or cr >= size:
-                cr -= pos
-                if rev:
-                    break
-                pos = -pos
-                rev = True
-            hidden = self.isRowHidden(cr)
-        self.setCurrentRow(cr, QItemSelectionModel.Current)
 
 
 class SongListDialog(QDialog):
@@ -76,14 +65,31 @@ class SongListDialog(QDialog):
         '0': "0 ",
     }
 
-    def __init__(self, gp, app):
+    keypad = [
+        (0x1, 0, 0, "1 *"),
+        (0x2, 0, 1, "2 ABC"),
+        (0x3, 0, 2, "3 DEF"),
+        (0x4, 1, 0, "4 GHI"),
+        (0x5, 1, 1, "5 JKL"),
+        (0x6, 1, 2, "6 MNO"),
+        (0x7, 2, 0, "7 PQRS"),
+        (0x8, 2, 1, "8 TUV"),
+        (0x9, 2, 2, "9 WXYZ"),
+        (0x0, 3, 1, "0 "),
+        (0xC, 3, 0, "CLEAR"),
+        (0xD, 3, 2, "SEL"),
+        (0xA, 1, 3, "UP"),
+        (0xB, 2, 3, "DOWN"),
+    ]
+
+    def __init__(self, window: "GigPanelWindow", app: Application) -> None:
         QDialog.__init__(self)
-        self.gp = gp
+        self.gp = window.gp
 
         self.setModal(True)
-        self.setGeometry(gp.parent().geometry())
+        self.setGeometry(window.geometry())
 
-        self.setWindowState(gp.parent().windowState())
+        self.setWindowState(window.windowState())
 
         h = QHBoxLayout()
         self.setLayout(h)
@@ -92,11 +98,11 @@ class SongListDialog(QDialog):
         h.addLayout(v)
         #self.setLayout(v)
 
-        self.songlist = SongListWidget(gp.songs)
+        self.songlist = SongListWidget(window.gp.songs)
         #self.songlist = SongListWidget(None)
         v.addWidget(self.songlist)
         g = QGridLayout()
-        if app.horizontal:
+        if app.appconfig.horizontal:
             h.addLayout(g)
         else:
             v.addLayout(g)
@@ -108,25 +114,7 @@ class SongListDialog(QDialog):
         btn.clicked.connect(lambda ch: self.reject())
         v.addWidget(btn)
 
-        keypad = [
-            (0x1, 0, 0, "1 *"),
-            (0x2, 0, 1, "2 ABC"),
-            (0x3, 0, 2, "3 DEF"),
-            (0x4, 1, 0, "4 GHI"),
-            (0x5, 1, 1, "5 JKL"),
-            (0x6, 1, 2, "6 MNO"),
-            (0x7, 2, 0, "7 PQRS"),
-            (0x8, 2, 1, "8 TUV"),
-            (0x9, 2, 2, "9 WXYZ"),
-            (0x0, 3, 1, "0 _"),
-            (0xC, 3, 0, "CLEAR"),
-            (0xE, 3, 2, "NONE"),
-            (0xD, 2, 3, "SEL"),
-            (0xA, 0, 3, "UP"),
-            (0xB, 1, 3, "DOWN"),
-            (0xF, 3, 3, "OK"),
-        ]
-        for data, x, y, text in keypad:
+        for data, x, y, text in SongListDialog.keypad:
             btn = QPushButton(text)
             btn.clicked.connect(lambda ch, d=data: self.btnpress(d))
             btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -134,22 +122,22 @@ class SongListDialog(QDialog):
             g.setRowStretch(x, 1)
 
         self.filter_string = ""
-        self.filter_btns = []
+        self.filter_btns: list[str] = []
 
-    def btnpress(self, btn):
+    def btnpress(self, btn: int) -> None:
         self.ext_input(btn)
 
-    def get_songs(self):
+    def get_songs(self) -> Optional[list[SonglistItem]]:
         self.gp.ext_input_cb.append(self.ext_input)
         self.exec_()
         del self.gp.ext_input_cb[-1]
 
         if self.result() == QDialog.Accepted:
-            return self.songlist.selectedItems()
+            return [x for x in self.songlist.selectedItems() if isinstance(x, SonglistItem)]
         else:
             return None
 
-    def ext_input(self, btn):
+    def ext_input(self, btn: int) -> None:
         filter_btns = self.filter_btns.copy()
         if btn >= 0 and btn <= 9:
             filter_btns.append(chr(ord('0') + btn))
@@ -157,16 +145,16 @@ class SongListDialog(QDialog):
             filter_btns = filter_btns[:-1]
             filter_btns = []
         elif btn == 0x0A or btn == 0x0B:
-            self.songlist.advance_row(1 if btn == 0x0B else -1)
+            row = self.songlist.currentRow() + (1 if btn == 0x0B else -1)
+            self.songlist.setCurrentRow(row, QItemSelectionModel.Current)
             self.songlist.setFocus()
         elif btn == 0x0D:
             sm = self.songlist.selectionModel()
             sm.select(sm.currentIndex(), QItemSelectionModel.Toggle)
-            # self.songlist.setFocus()
+            #self.songlist.setFocus()
             filter_btns = []
         elif btn == 0x0E:
-            # self.reject()
-            self.songlist.selectionModel().clear()
+            self.reject()
         elif btn == 0x0F:
             self.accept()
 

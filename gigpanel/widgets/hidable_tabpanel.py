@@ -1,10 +1,11 @@
+from typing import Any
 from PyQt5.QtWidgets import QWidget, QGridLayout, QSizePolicy, QScrollArea, QAbstractScrollArea, QTabBar
 
 from PyQt5.QtCore import QPropertyAnimation, QParallelAnimationGroup
 
 
 class HidableTabWidget(QScrollArea):
-    def __init__(self, widget):
+    def __init__(self, widget: QWidget) -> None:
         super().__init__()
 
         contentArea = self
@@ -25,35 +26,35 @@ class HidableTabWidget(QScrollArea):
 
 
 class HidableTabPanel(QWidget):
-    def __init__(self, title=""):
+    def __init__(self, title: str = "") -> None:
         QWidget.__init__(self)
 
         tabBar = QTabBar()
 
-        mainLayout = QGridLayout()
-        mainLayout.setVerticalSpacing(0)
-        mainLayout.setContentsMargins(0, 0, 0, 0)
-        mainLayout.addWidget(tabBar, 0, 0, 1, 2)
+        self.mainLayout = QGridLayout()
+        self.mainLayout.setVerticalSpacing(0)
+        self.mainLayout.setContentsMargins(0, 0, 0, 0)
+        self.mainLayout.addWidget(tabBar, 0, 0, 1, 2)
 
-        self.setLayout(mainLayout)
+        self.setLayout(self.mainLayout)
         self.tb = tabBar
 
         self.ci = 0
-        self.content = []
+        self.content: list[HidableTabWidget] = []
 
         tabBar.currentChanged.connect(self.on_tab_changed)
 
-    def addTab(self, name, widget):
+    def addTab(self, name: str, widget: QWidget) -> None:
         self.tb.addTab(name)
         w = HidableTabWidget(widget)
 
         self.content.append(w)
-        self.layout().addWidget(w, len(self.content), 0, 1, 2)
+        self.mainLayout.addWidget(w, len(self.content), 0, 1, 2)
 
         if len(self.content) == 1:
             self.on_tab_changed(0)
 
-    def _animate(self, animation, startHeight, endHeight):
+    def _animate(self, animation: Any, startHeight: int, endHeight: int) -> None:
         animationDuration = 100
         for i in range(animation.animationCount() - 1):
             SectionAnimation = animation.animationAt(i)
@@ -67,7 +68,7 @@ class HidableTabPanel(QWidget):
         contentAnimation.setEndValue(endHeight)
         animation.start()
 
-    def on_tab_changed(self, index):
+    def on_tab_changed(self, index: int) -> None:
         if not self.content:
             return
 

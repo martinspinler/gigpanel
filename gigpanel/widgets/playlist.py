@@ -1,41 +1,53 @@
 import os
+from typing import Callable, Any, Optional
+
 
 from PyQt5.QtWidgets import QWidget, QListWidget, QListWidgetItem, QHBoxLayout, QVBoxLayout, QPushButton
+
 from . import SongListDialog
 
 
-class QListWidgetWithId(QListWidget):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.items_by_id = {}
+from ..playlist import PlaylistEventListener
+from ..song import Playlist, PlaylistItem
+from ..app import Application
 
-    def addItem(self, i):
-        self.items_by_id[i.id] = i
-        return super().addItem(i)
-
-    def takeItem(self, i):
-        x = super().takeItem(i)
-        del self.items_by_id[x.id]
-        return x
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..window import GigPanelWidget, GigPanelWindow
 
 
-class PlaylistItem(QListWidgetItem):
-    def __init__(self, song, pli):
-        if song.get('user_id'):
-            name = str(song.get('user_id')) + " - " + song['name']
-        else:
-            name = song['name']
+class QPlaylistItem(QListWidgetItem):
+    def __init__(self, pli: PlaylistItem):
+        self.song = song = pli.song
+        name = f"{song.user_id} - {song.name}" if song.user_id else song.name
 
         QListWidgetItem.__init__(self, name)
-        self.song = song
-        [setattr(self, a, pli[a]) for a in ['id']]
+        self.id = pli.id
+        self.pli = pli
 
 
-class PlaylistWidget(QWidget):
-    def __init__(self, gp, app, window):
+class QListWidgetWithId(QListWidget):
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.items_by_id: dict[int, QPlaylistItem] = {}
+
+    def add_item(self, i: QPlaylistItem) -> None:
+        self.items_by_id[i.id] = i
+        super().addItem(i)
+
+    def takeItem(self, row: int) -> QListWidgetItem | None:
+        i = super().takeItem(row)
+        if isinstance(i, QPlaylistItem):
+            del self.items_by_id[i.id]
+        return i
+
+
+class PlaylistWidget(PlaylistEventListener, QWidget):
+    def __init__(self, window: "GigPanelWindow", gp: "GigPanelWidget", app: Application):
         QWidget.__init__(self)
         self.app = app
         self.gp = gp
+        self.gpwindow = window
         self.playlist = QListWidgetWithId()
         self.playlist.currentItemChanged.connect(self.current_item_changed)
         #self.playlist.itemActivated.connect(self.item_activated)
@@ -46,7 +58,7 @@ class PlaylistWidget(QWidget):
         #l.setStretch(0, 1)
 
         layout = QVBoxLayout()
-        if self.app.horizontal and False:
+        if self.app.appconfig.horizontal and False:
             #l = QVBoxLayout()
             layout.addWidget(self.playlist)
         else:
@@ -57,7 +69,7 @@ class PlaylistWidget(QWidget):
         #h.addLayout(l)
         #l = QVBoxLayout()
 
-        def addButton(text, cb):
+        def addButton(text: str, cb: Callable[[QPushButton], Any]) -> None:
             btn = QPushButton(text)
             btn.clicked.connect(cb)
             layout.addWidget(btn)
@@ -76,62 +88,53 @@ class PlaylistWidget(QWidget):
 
         addButton("Next page", lambda x: self.gp.document.next_page())
         #addButton("Store db", self.gp.storeDb)
-        addButton("Hide", lambda x: self.gp.wnd.dw.setVisible(False))
+        #addButton("Hide", lambda x: self.gpwindow.dw.setVisible(False))
 
         addButton("Exit", lambda x: window.close())
 
-    def load(self, playlist):
+    def load(self, playlist: Playlist) -> None:
+        ci = self.playlist.currentItem()
+        ciid = ci.id if isinstance(ci, QPlaylistItem) else None
         self.playlist.clear()
 
-        for songItem in playlist:
-            playlistItem = playlist[songItem]
-            songId = playlistItem['song_id']
-            try:
-                song = self.gp.songs[songId]
-            except KeyError:
-                print("Cant find playlist song:", songItem)
-            else:
-                self.playlist.addItem(PlaylistItem(song, playlistItem))
+        for playlistItem in playlist:
+            pi = QPlaylistItem(playlistItem)
+            self.playlist.add_item(pi)
 
-    def play(self, pli):
-        item = self.playlist.items_by_id[pli['id']]
+            if ciid == pi.id:
+                self.playlist.setCurrentItem(pi)
+
+    def pe_play(self, pli: PlaylistItem) -> None:
+        item = self.playlist.items_by_id[pli.id]
         self.playlist.setCurrentRow(self.playlist.row(item))
 
-    def add(self, ch):
-        d = SongListDialog(self.gp, self.app).get_songs()
+    def add(self, ch: QPushButton) -> None:
+        d = SongListDialog(self.gpwindow, self.app).get_songs()
         if d is not None:
             for si in d:
-                self.app.pc.playlist_item_add(si)
+                self.app.pc.playlist_item_add(si.song)
 
-    def delete(self):
-        self.app.pc.playlist_item_del(self.playlist.currentItem().id)
+    def delete(self) -> None:
+        ci: Optional[QListWidgetItem] = self.playlist.currentItem()
+        if isinstance(ci, QPlaylistItem):
+            self.app.pc.playlist_item_del(ci.id)
 
-    def client_add(self, pli):
-        song = self.gp.songs[pli['song_id']]
-        self.playlist.addItem(PlaylistItem(song, pli))
+    def pe_add(self, pli: PlaylistItem) -> None:
+        self.playlist.add_item(QPlaylistItem(pli))
 
-    def client_del(self, pli):
-        item = self.playlist.items_by_id[pli['id']]
+    def client_del(self, pli: PlaylistItem) -> None:
+        item = self.playlist.items_by_id[pli.id]
         x = self.playlist.takeItem(self.playlist.row(item))
         del x
 
-    def mv(self, off):
-        if self.playlist.currentItem():
-            self.app.pc.playlist_item_move(self.playlist.currentItem().id, off)
+    def mv(self, off: int) -> None:
+        ci = self.playlist.currentItem()
+        if isinstance(ci, QPlaylistItem):
+            self.app.pc.playlist_item_move(ci.id, off)
 
-    def current_item_changed(self, ci, pi):
+    def current_item_changed(self, ci: QPlaylistItem | None, pi: QPlaylistItem | None) -> None:
         if ci:
             self.gp.loadSong(ci.song)
-            self.app.tempo.setTempo(ci.song.get('bpm'))
 
-    def livelist_client_cb(self, cmd, data):
-        requests = {
-            'add': self.client_add,
-            'delete': self.client_del,
-            'update': self.load,
-            'play': self.play
-        }
-        if cmd in requests:
-            requests[cmd](data)
-        elif not cmd.startswith("_"):
-            print("Playlist: unhandled cmd", cmd)
+    def pe_update_playlist(self, data: Playlist) -> None:
+        self.load(data)
