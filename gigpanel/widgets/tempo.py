@@ -61,6 +61,10 @@ class TabTempoWidget(QWidget):
         layout.setStretch(0, 1)
 
         self.btn_next = QPushButton("Next")
+        self.btn_preset = QPushButton("Preset")
+        self.btn_preset.setEnabled(False)
+
         layout.addWidget(self.btn_next)
+        layout.addWidget(self.btn_preset)
 
         self.setLayout(layout)

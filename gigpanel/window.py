@@ -136,6 +136,29 @@ class GigPanelWidget(PlaylistEventListener, QWidget):
         if song.bpm:
             self.tempo.setTempo(song.bpm)
 
+        bp = self.wnd.tab_tempo.btn_preset
+        qbox = self.wnd.mbview.qmidibox
+        mpresets = [k for k, v in qbox._presets.items() if v.label == song.name]
+        dplabel = self.app.config.get('midibox', {}).get('default-preset', None)
+        dpresets = [k for k, v in qbox._presets.items() if v.label == dplabel]
+
+        if mpresets:
+            bp.setEnabled(True)
+            bp.setText("Preset (S)")
+            bp.clicked.connect(lambda x: self.setPreset(mpresets[0]))
+        elif dpresets:
+            bp.setEnabled(True)
+            bp.setText("Preset (D)")
+            bp.clicked.connect(lambda x: self.setPreset(dpresets[0]))
+        else:
+            bp.setEnabled(False)
+            bp.setText("Preset (-)")
+            bp.clicked.connect(lambda x: None)
+
+    def setPreset(self, p: int) -> None:
+        qbox = self.wnd.mbview.qmidibox
+        qbox.loadPreset(p)
+
     def loadSongs(self, songs: Songlist) -> None:
         self.songs = songs
         for song in songs.values():
