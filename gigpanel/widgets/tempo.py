@@ -23,6 +23,7 @@ class TempoWidget(QWidget):
             btn.setEnabled(False)
             self.tempoBtns.append(btn)
             btn.setObjectName("tempoButton" + ("" if i else "1"))
+            btn.setProperty("class", 'tempoButton')
             btn.setAutoFillBackground(False)
             btn.setCheckable(True)
             layout.setStretchFactor(btn, 4)

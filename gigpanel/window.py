@@ -9,7 +9,7 @@ from .widgets import PlaylistWidget
 from .widgets import HidableTabPanel, TabTempoWidget, TempoWidget
 
 from PyQt5.QtWidgets import QWidget, QMainWindow, QVBoxLayout, QStackedLayout, QDockWidget
-from PyQt5.QtCore import Qt, QFile, QPoint, QSize
+from PyQt5.QtCore import Qt, QFile, QPoint, QSize, QRect
 from PyQt5.QtGui import QCloseEvent
 
 from PyQt5.QtCore import QSettings
@@ -20,54 +20,27 @@ from .playlist import PlaylistEventListener
 from .song import Songlist
 
 
-def set_style(app: Application) -> None:
-    def style_fs(w: int, h: int) -> str:
-        ws = f"min-width:{w}px;max-width:{w}px;" if w is not None else ""
-        hs = f"min-height:{h}px;max-height:{h}px;" if h is not None else ""
-        return ws + hs
+def set_style(app: Application, geometry: QRect) -> bool:
+    style = []
 
-    def style_fs2(w: int, h: int) -> str:
-        ws = f"max-width:{w}px;" if w is not None else ""
-        hs = f"max-height:{h}px;" if h is not None else ""
-        return ws + hs
-
-    style = ""
-
+    r = geometry
     ac = app.appconfig
-    r = app.qapp.screens()[0].geometry()
-    ac.horizontal = r.width() > r.height()
+    horizontal = r.width() > r.height()
+    prev_horizontal = ac.horizontal if hasattr(ac, 'horizontal') else not horizontal
+    ac.horizontal = horizontal
 
+    font_size = "18pt"
     if ac.args.fullscreen:
-        font_size = 48
-        #doc_w, doc_h = int(1080-240), int(1920)
-        #doc_w, doc_h = int(1080), int(1920-240)
-        if ac.horizontal:
-            doc_w, doc_h = r.width() - 140, r.height()
-        else:
-            doc_w, doc_h = r.width(), r.height()
-        style = f"""
-            QPushButton {{font: {font_size}px;}}
-            QListWidget {{font: {font_size}px;}}
-            #DocumentWidget {{{style_fs(doc_w, doc_h)} border-color:red; border-width:0px; border-style:solid;}}
-            QScrollBar::vertical {{min-width: 40px;}}
-            """
-    else:
-        doc_w, doc_h = 80, 60
-        doc_w, doc_h = int(1440), int(1080)
-        doc_w, doc_h = int(1440), None
-        doc_w, doc_h = int(1080 / 3), int(1920 / 3)
-        #doc_w, doc_h = int(1080/3), int(1920/3)
-        #win_w, win_h = int(1920/2), int(1080/2)
+        style.append(f"QPushButton {{font: {font_size};}}")
+        style.append(f"QListWidget {{font: {font_size};}}")
+        style.append("QScrollBar::vertical {min-width: 2em;}")
+        style.append(f"QTabBar {{font: {font_size};}}")
 
-        style = f"""
-            DocumentWidget {{{style_fs(doc_w, doc_h)} border-color:red; border-width:2px; border-style:solid;}}
-            """
-
-    style += " QPushButton#tempoButton{background-color: yellow; font: 64px;}"
-    style += " QPushButton#tempoButton1{background-color: yellow; font: 64px;}"
-    style += " QPushButton#tempoButton:checked{background-color: blue;}"
-    style += " QPushButton#tempoButton1:checked{background-color: red;}"
-    app.qapp.setStyleSheet(style)
+    style.append(f".tempoButton{{background-color: yellow; font: {font_size};}}")
+    style.append(".tempoButton:checked{background-color: blue;}")
+    style.append("#tempoButton1:checked{background-color: red;}")
+    app.qapp.setStyleSheet(" ".join(style))
+    return prev_horizontal != horizontal
 
 
 def song_update_path(song: Song, app: Application) -> None:
@@ -81,7 +54,13 @@ def song_update_path(song: Song, app: Application) -> None:
 
     if (song.filename is None or not QFile(song.filename).exists()) and 'pattern' in store:
         for fn in ([file] if file else []) + [song.name]:
-            for instrument in ['-Piano', ' - Piano', '-Electric_Piano', ' Piano', '']:
+            instrument_suffixes = ['-Piano', ' - Piano', '-Electric_Piano', ' Piano', '']
+            if app.appconfig.horizontal:
+                instrument_suffixes = [x + "-L" for x in instrument_suffixes] + instrument_suffixes
+            else:
+                instrument_suffixes = [x + "-P" for x in instrument_suffixes] + instrument_suffixes
+
+            for instrument in instrument_suffixes:
                 pattern = store['pattern'].format(name=fn, instrument=instrument)
                 filename = app.config['prefixes'][store['prefix']] + pattern
                 if QFile(filename).exists():
@@ -188,11 +167,14 @@ class GigPanelWidget(PlaylistEventListener, QWidget):
 
 class GigPanelWindow(QMainWindow):
     def __init__(self, pcConfig: dict[str, Any], app: Application) -> None:
-        set_style(app)
-
         QMainWindow.__init__(self)
-        self.setWindowTitle('Gig panel')
+
         self.app = app
+        s = self.screen()
+        s.virtualGeometryChanged.connect(self.onGeometryChanged)
+        set_style(self.app, s.geometry())
+
+        self.setWindowTitle('Gig panel')
 
         self.tab_tempo = TabTempoWidget()
         self.gp = GigPanelWidget(self, app, self.tab_tempo.tempo)
@@ -223,7 +205,7 @@ class GigPanelWindow(QMainWindow):
         self.hw = hw
 
         self.dw = QDockWidget()
-        self.dw.setFeatures(QDockWidget.NoDockWidgetFeatures)
+        self.dw.setFeatures(QDockWidget.DockWidgetVerticalTitleBar)
         self.dw.setWidget(hw)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw)
 
@@ -242,6 +224,11 @@ class GigPanelWindow(QMainWindow):
             self.setWindowState(Qt.WindowFullScreen)
 
         self.tab_tempo.btn_next.clicked.connect(lambda x: app.pc.playlist_item_set(off=+1))
+
+    def onGeometryChanged(self, geometry: QRect) -> None:
+        orientation_changed = set_style(self.app, geometry)
+        if orientation_changed:
+            self.gp.loadSongs(self.gp.songs)
 
     def onDocumentClick(self, pos: QPoint, size: QSize) -> bool:
         visible = self.dwIsVisible()
