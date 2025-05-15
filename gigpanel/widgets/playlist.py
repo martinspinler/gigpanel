@@ -50,7 +50,7 @@ class PlaylistWidget(PlaylistEventListener, QWidget):
         self.gpwindow = window
         self.playlist = QListWidgetWithId()
         self.playlist.currentItemChanged.connect(self.current_item_changed)
-        #self.playlist.itemActivated.connect(self.item_activated)
+        self.playlist.itemActivated.connect(self.item_activated)
 
         h = QHBoxLayout()
         self.setLayout(h)
@@ -76,7 +76,7 @@ class PlaylistWidget(PlaylistEventListener, QWidget):
 
         midibox_host = app.mb_cfg.get("backend-params", {}).get("addr", 'invalid')
         cmd = f'ssh -o ConnectTimeout=3 {midibox_host} -C sudo poweroff'
-        addButton("Poweroff oscbox", lambda x: os.system(cmd))
+        addButton("Playlist config", lambda x: self.app.pc.show_config())
         #addButton("Poweroff oscbox", lambda x: self.app.oc.send_message("/poweroff", None))
         addButton("Move up", lambda x: self.mv(-1))
         addButton("Move down", lambda x: self.mv(+1))
@@ -84,6 +84,7 @@ class PlaylistWidget(PlaylistEventListener, QWidget):
         addButton("Add", self.add)
         addButton("Prev", lambda x: self.app.pc.playlist_item_set(off=-1))
         addButton("Next", lambda x: self.app.pc.playlist_item_set(off=+1))
+        addButton("Poweroff oscbox", lambda x: os.system(cmd))
         layout.addSpacing(40)
 
         addButton("Next page", lambda x: self.gp.document.next_page())
@@ -135,6 +136,9 @@ class PlaylistWidget(PlaylistEventListener, QWidget):
     def current_item_changed(self, ci: QPlaylistItem | None, pi: QPlaylistItem | None) -> None:
         if ci:
             self.gp.loadSong(ci.song)
+
+    def item_activated(self, ci: QPlaylistItem) -> None:
+        self.app.pc.playlist_item_set(ci.id, 0)
 
     def pe_update_playlist(self, data: Playlist) -> None:
         self.load(data)

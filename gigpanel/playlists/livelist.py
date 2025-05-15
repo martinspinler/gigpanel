@@ -12,7 +12,7 @@ from ..song import Song, PlaylistItem, PlaylistItemId
 
 
 class LivelistPlaylistClient(PlaylistClient):
-    def __init__(self, url: Optional[str] = None, prefix: str = '', currentBand: int = 1):
+    def __init__(self, url: Optional[str] = None, prefix: str = '', currentBand: int = 1, **kwargs):
         super().__init__()
         addr = urllib.parse.urlsplit(url)
         secure = "s" if addr.scheme == 'https' else ""
@@ -21,6 +21,7 @@ class LivelistPlaylistClient(PlaylistClient):
         self._prefix = prefix
         self._queue: asyncio.Queue[str] = asyncio.Queue()
         self._currentBand = currentBand
+        self.currentPlaylistId = None
 
     async def _receive_msg(self, msgid: Optional[str]) -> Tuple[str, Dict[str, Any]]:
         i = 0
@@ -126,7 +127,6 @@ class LivelistPlaylistClient(PlaylistClient):
         self.send_msg('move', {'id': si, 'playlist_id': self.currentPlaylistId, 'pos': pos})
 
     def playlist_item_set(self, id: Optional[PlaylistItemId] = None, off: Optional[int] = None) -> None:
-        print("PIS", id, off)
         self.send_msg('play', {'id': id, 'playlist_id': self.currentPlaylistId, 'off': off})
 
     def send_msg(self, msg: str, data: Any = {}) -> None:
@@ -135,7 +135,15 @@ class LivelistPlaylistClient(PlaylistClient):
     async def send_msg_async(self, msg: str, data: Any = {}) -> None:
         await self.ws.send_str(f"client:{msg}:" + json.JSONEncoder().encode(data))
 
-    async def get_messages(self) -> None:
+    async def run(self) -> None:
+        while True:
+            try:
+                await self.connect()
+                break
+            except Exception:
+                await self.session.close()
+                await asyncio.sleep(5)
+
         if not hasattr(self, 'ws'):
             return
 

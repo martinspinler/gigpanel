@@ -24,6 +24,9 @@ class PlaylistClient():
     def __init__(self, **kwargs: Any) -> None:
         self._cbs: list[PlaylistEventListener] = []
 
+    def show_config(self):
+        pass
+
     def add_callback(self, cb: PlaylistEventListener) -> None:
         self._cbs.append(cb)
 
@@ -51,5 +54,5 @@ class PlaylistClient():
     def playlist_item_set(self, id: Optional[int] = None, off: int | None = None) -> None:
         pass
 
-    async def get_messages(self) -> None:
+    async def run(self) -> None:
         pass

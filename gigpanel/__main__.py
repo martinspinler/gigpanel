@@ -96,13 +96,13 @@ async def amain() -> None:
 
     # Playlist setup
     defaultPC = ac.args.playlist_client or cfg['defaultPlaylistClient']
-    cfg_pc = cfg['playlistClients'][defaultPC]
+    cfg_pc = cfg['playlistClients'].get(defaultPC, {})
     playlist_client_class = {
         "livelist": LivelistPlaylistClient,
         "local": LocalPlaylistClient,
     }.get(cfg_pc.get("pc_type"), LivelistPlaylistClient)
 
-    app.pc = playlist_client_class(**cfg_pc)
+    app.pc = playlist_client_class(**cfg_pc, stores=cfg['stores'], prefixes=cfg['prefixes'])
 
     gpwindow = GigPanelWindow(cfg_pc, app)
     gpwindow.show()
@@ -112,15 +112,10 @@ async def amain() -> None:
     except Exception:
         raise
 
-    try:
-        await app.pc.connect()
-    except Exception:
-        raise
-
     loop, future = init_loop(app)
     try:
         #app.oc.start()
-        asyncio.ensure_future(app.pc.get_messages())
+        asyncio.ensure_future(app.pc.run())
         await future
     except Exception:
         raise

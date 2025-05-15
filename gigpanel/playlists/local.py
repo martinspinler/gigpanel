@@ -1,24 +1,53 @@
 import yaml
 
 from typing import Any
+import os
+
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton
+
 from ..playlist import PlaylistClient
 from ..song import Song, PlaylistItem
+
+
+class ConfigDialog(QDialog):
+    def __init__(self, lpc):
+        super().__init__()
+        self.lpc = lpc
+
+        self.setModal(True)
+
+        h = QHBoxLayout()
+        self.setLayout(h)
+
+        v = QVBoxLayout()
+        h.addLayout(v)
+        btn = QPushButton("Save")
+        btn.clicked.connect(lambda ch: self.lpc.save())
+        v.addWidget(btn)
 
 
 class LocalPlaylistClient(PlaylistClient):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._filename: str = kwargs["dbpath"]
+        self._stores = kwargs["stores"]
+        self._prefixes = kwargs["prefixes"]
+        defstore = kwargs.get("defaultStore")
         self.db = yaml.load(open(self._filename, 'r').read(), yaml.Loader)
 
-        self.songlist = {k: Song(id=k, name=s['name'], store=s['store']) for k, s in self.db['songlist'].items()}
+        self.songlist = {k: Song(id=k, name=s['name'], store=(s['store'] if 'store' in s else defstore), filename=s.get('filename')) for k, s in self.db['songlist'].items()}
+
         self.playlists = [
-            [PlaylistItem(pi['id'], self.songlist[pi['song_id']], i) for i, pi in enumerate(pv['songs'].values())]
+            {pi['id']: PlaylistItem(pi['id'], self.songlist[pi['song_id']], i) for i, pi in enumerate(pv['songs'].values())}
             for pk, pv in self.db['playlists'].items()
         ]
 
         self.playlist = self.playlists[0]
+        self.currentPliId = None
         self.songs = self.songlist
+
+    def show_config(self):
+        ConfigDialog(self).exec_()
 
     @classmethod
     def to_yaml(cls, dumper: yaml.Dumper, data: Any) -> Any:
@@ -29,28 +58,26 @@ class LocalPlaylistClient(PlaylistClient):
                 del node[i]
         return node
 
-    async def connect(self) -> None:
+    async def run(self) -> None:
         await self.get_songlist()
         await self.get_playlist()
 
     def save(self) -> None:
         with open(self._filename, 'w') as outfile:
+            self.db['playlists'][1]['songs'] = {p: {'id': v.id, 'song_id': v.song.id} for p, v in self.playlist.items()}
             yaml.dump(self.db, outfile)
-            #yaml.dump([YamlSong.to_yaml(None, self.songs[s]) for s in self.songs], yaml_file, default_flow_style=False, allow_unicode=True)
 
     def disconnect(self) -> None:
         pass
 
     def playlist_item_add(self, song: Song) -> None:
-        id = 0
-        while str(id) in self.songs:
-            id += 1
+        pid = 0
+        while pid in self.playlist:
+            pid += 1
 
-        # TODO
-        #self.songs.update({id: Song(id=id, 'song_id': song.id}})
-        #for cb in self._cbs:
-        #    cb.pe_update_playlist(self.songs.values())
-        self.save()
+        self.playlist.update({pid: PlaylistItem(pid, song, len(self.playlist))})
+        for cb in self._cbs:
+            cb.pe_update_playlist(list(self.playlist.values()))
 
     #def playlist_item_del(self, si) -> None:
     #    del self.songs[kk]
@@ -61,13 +88,29 @@ class LocalPlaylistClient(PlaylistClient):
     #def playlist_item_move(self, si, pos) -> None:
     #    pass
 
-    #def playlist_item_set(self, id=None, off=None) -> None:
-    #    pass
+    def playlist_item_set(self, id=None, off=None) -> None:
+        pid = self.currentPliId if id is None else id
+        keys = list(self.playlist.keys())
+
+        pid = keys[0] if pid not in keys else pid
+        pindex = keys.index(pid)
+
+        if off is not None:
+            pindex += off
+            if pindex < 0:
+                pindex = 0
+            elif pindex >= len(self.playlist):
+                pindex = len(self.playlist) - 1
+        pid = keys[pindex]
+
+        pid = self.currentPliId = pid
+        for cb in self._cbs:
+            cb.pe_play(self.playlist[pid])
 
     async def get_playlist(self) -> None:
         data = self.playlists[0]
         for cb in self._cbs:
-            cb.pe_update_playlist(data)
+            cb.pe_update_playlist(list(data.values()))
 
     async def get_songlist(self) -> None:
         for cb in self._cbs:
