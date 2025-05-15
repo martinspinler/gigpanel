@@ -50,25 +50,30 @@ def song_update_path(song: Song, app: Application) -> None:
     file = song.filename
 
     if file:
-        song.filename = app.config['prefixes'][store['prefix']] + store['path'] + file + store['suffix']
+        try:
+            song.filename = app.config['prefixes'][store['prefix']] + store['path'] + file + store['suffix']
+        except Exception:
+            song.filename = None
 
-    if (song.filename is None or not QFile(song.filename).exists()) and 'pattern' in store:
-        for fn in ([file] if file else []) + [song.name]:
-            instrument_suffixes = ['-Piano', ' - Piano', '-Electric_Piano', ' Piano', '']
-            if app.appconfig.horizontal:
-                instrument_suffixes = [x + "-L" for x in instrument_suffixes] + instrument_suffixes
-            else:
-                instrument_suffixes = [x + "-P" for x in instrument_suffixes] + instrument_suffixes
+    if (song.filename is None or not QFile(song.filename).exists()):
+        pattern = song.pattern if song.pattern is not None else (store['pattern'] if 'pattern' in store else None)
+        if pattern is not None:
+            for fn in ([file] if file else []) + [song.name]:
+                instrument_suffixes = ['-Piano', ' - Piano', '-Electric_Piano', ' Piano', '']
+                if app.appconfig.horizontal:
+                    instrument_suffixes = [x + "-L" for x in instrument_suffixes] + instrument_suffixes
+                else:
+                    instrument_suffixes = [x + "-P" for x in instrument_suffixes] + instrument_suffixes
 
-            for instrument in instrument_suffixes:
-                pattern = store['pattern'].format(name=fn, instrument=instrument)
-                filename = app.config['prefixes'][store['prefix']] + pattern
-                if QFile(filename).exists():
-                    song.filename = filename
-                    break
-            else:
-                continue
-            break
+                for instrument in instrument_suffixes:
+                    fpattern = pattern.format(name=fn, instrument=instrument)
+                    filename = app.config['prefixes'][store['prefix']] + fpattern
+                    if QFile(filename).exists():
+                        song.filename = filename
+                        break
+                else:
+                    continue
+                break
 
 
 class GigPanelWidget(PlaylistEventListener, QWidget):

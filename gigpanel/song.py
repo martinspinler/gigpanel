@@ -15,6 +15,7 @@ class Song:
     user_id: Optional[str] = None
     filename: Optional[str] = None
     bpm: Optional[int] = None
+    pattern: Optional[str] = None
 
 
 @dataclass
