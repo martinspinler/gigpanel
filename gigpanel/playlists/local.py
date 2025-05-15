@@ -35,7 +35,29 @@ class LocalPlaylistClient(PlaylistClient):
         defstore = kwargs.get("defaultStore")
         self.db = yaml.load(open(self._filename, 'r').read(), yaml.Loader)
 
-        self.songlist = {k: Song(id=k, name=s['name'], store=(s['store'] if 'store' in s else defstore), filename=s.get('filename')) for k, s in self.db['songlist'].items()}
+        self.songlist = {
+            k: Song(
+                id=k,
+                name=s['name'],
+                store=(s['store'] if 'store' in s else defstore),
+                filename=s.get('filename'),
+                pages=s.get('pages'),
+            ) for k, s in self.db['songlist'].items()
+        }
+
+        slss = self.db.get("songlist_scan")
+        if slss:
+            for sls in slss:
+                sname = sls['store']
+                store = self._stores[sname]
+                pfx = self._prefixes[store['prefix']]
+                path = pfx + store['path']
+                for folder in sls['folders']:
+                    files = os.listdir(path + folder)
+                    for f in files:
+                        if f.endswith(store['suffix']):
+                            song = Song(id=f, name=f[:-len(store['suffix'])], store=sname, pattern=f'{folder}/{{name}}.pdf')
+                            self.songlist.update({f: song})
 
         self.playlists = [
             {pi['id']: PlaylistItem(pi['id'], self.songlist[pi['song_id']], i) for i, pi in enumerate(pv['songs'].values())}
