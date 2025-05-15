@@ -2,7 +2,6 @@ from typing import Callable, Any
 
 import mido
 
-from .song import Song
 from .app import Application
 from .widgets import DocumentWidget, DocumentWidgetScrollArea
 from .widgets import PlaylistWidget
@@ -17,7 +16,7 @@ from PyQt5.QtCore import QSettings
 from midibox.widget import MidiboxQuickWidget
 
 from .playlist import PlaylistEventListener
-from .song import Songlist
+from .song import Song, Songlist, PlaylistItem
 
 
 def set_style(app: Application, geometry: QRect) -> bool:
@@ -114,9 +113,10 @@ class GigPanelWidget(PlaylistEventListener, QWidget):
 
         self.songs: dict[int, Song] = {} # TODO: Is key really int?
 
-    def loadSong(self, song: Song) -> None:
+    def loadSong(self, pli: PlaylistItem) -> None:
+        song = pli.song
         if song.filename:
-            self.document.loadSong(song)
+            self.document.loadSong(pli)
         if song.bpm:
             self.tempo.setTempo(song.bpm)
 

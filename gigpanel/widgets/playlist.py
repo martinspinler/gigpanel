@@ -135,7 +135,7 @@ class PlaylistWidget(PlaylistEventListener, QWidget):
 
     def current_item_changed(self, ci: QPlaylistItem | None, pi: QPlaylistItem | None) -> None:
         if ci:
-            self.gp.loadSong(ci.song)
+            self.gp.loadSong(ci.pli)
 
     def item_activated(self, ci: QPlaylistItem) -> None:
         self.app.pc.playlist_item_set(ci.id, 0)

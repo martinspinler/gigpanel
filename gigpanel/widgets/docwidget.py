@@ -7,7 +7,7 @@ from PyQt5.QtGui import QImage, QPixmap, QPainter, QMouseEvent, QResizeEvent
 from PyQt5.QtCore import Qt, QPoint, QRect, QSize
 
 
-from ..song import Song
+from ..song import Song, PlaylistItem
 from ..appconfig import AppConfig
 
 import popplerqt5
@@ -45,7 +45,10 @@ class DocumentWidget(QLabel):
 
         self._click_callback: Optional[Callable[[QPoint, QSize], bool]] = None
 
-    def loadSong(self, song: Song) -> None:
+    def loadSong(self, pli: PlaylistItem) -> None:
+        self.pli = pli
+        song = pli.song
+
         doc = popplerqt5.Poppler.Document
         self.sect = 0
         self.song = song
@@ -60,7 +63,8 @@ class DocumentWidget(QLabel):
         self.document.setRenderHint(hints)
         #self.document.setRenderBackend(doc.SplashBackend)
         #self.document.setRenderBackend(doc.ArthurBackend)
-        self.loadPage(0)
+        pg = song.pages[self.pli.pages[0] if self.pli.pages is not None else 0] if song.pages else 0
+        self.loadPage(pg)
 
         #if 'Scenes' in song and song['Scenes']:
         #    if 'Registration' in song['Scenes'][0]:

@@ -14,6 +14,7 @@ class Song:
     store: Optional[str] = None
     user_id: Optional[str] = None
     filename: Optional[str] = None
+    pages: Optional[list[int]] = None
     bpm: Optional[int] = None
     pattern: Optional[str] = None
 
@@ -23,6 +24,7 @@ class PlaylistItem:
     id: PlaylistItemId
     song: Song
     pos: int
+    pages: Optional[list[int]] = None
 
 
 Songlist: TypeAlias = Dict[SongId, Song]
