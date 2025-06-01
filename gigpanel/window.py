@@ -5,7 +5,7 @@ import mido
 from .app import Application
 from .widgets import DocumentWidget, DocumentWidgetScrollArea
 from .widgets import PlaylistWidget
-from .widgets import HidableTabPanel, TabTempoWidget, TempoWidget
+from .widgets import HidableTabPanel, TabTempoWidget, TempoWidget, TabBookmarksWidget
 
 from PyQt5.QtWidgets import QWidget, QMainWindow, QVBoxLayout, QStackedLayout, QDockWidget
 from PyQt5.QtCore import Qt, QFile, QPoint, QSize, QRect
@@ -183,6 +183,7 @@ class GigPanelWindow(QMainWindow):
 
         self.tab_tempo = TabTempoWidget()
         self.gp = GigPanelWidget(self, app, self.tab_tempo.tempo)
+        self.tab_bookmarks = TabBookmarksWidget(self.gp.document, app)
         self.setCentralWidget(self.gp)
 
         self.gp.document.setClickCallback(self.onDocumentClick)
@@ -203,7 +204,10 @@ class GigPanelWindow(QMainWindow):
 
         hw = HidableTabPanel()
         #hw.addTab("Hide", HidableTabWidget(QWidget()))
-        hw.addTab("Tempo", self.tab_tempo)
+        if pcConfig.get('panel') == "bookmarks":
+            hw.addTab("Bookmarks", self.tab_bookmarks)
+        else:
+            hw.addTab("Tempo", self.tab_tempo)
         hw.addTab("Playlist", self.gp.playlist)
         hw.addTab("Midibox", view)
 
@@ -229,6 +233,7 @@ class GigPanelWindow(QMainWindow):
             self.setWindowState(Qt.WindowFullScreen)
 
         self.tab_tempo.btn_next.clicked.connect(lambda x: app.pc.playlist_item_play(off=+1))
+        self.tab_bookmarks.btn_next.clicked.connect(lambda x: app.pc.playlist_item_play(off=+1))
 
     def onGeometryChanged(self, geometry: QRect) -> None:
         orientation_changed = set_style(self.app, geometry)
