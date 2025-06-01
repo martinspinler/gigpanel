@@ -87,6 +87,7 @@ class SongListDialog(QDialog):
         self.gp = window.gp
 
         self.setModal(True)
+        self.setWindowFlags(Qt.Window)
         self.setGeometry(window.geometry())
 
         self.setWindowState(window.windowState())
