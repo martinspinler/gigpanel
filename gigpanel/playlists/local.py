@@ -101,11 +101,10 @@ class LocalPlaylistClient(PlaylistClient):
         for cb in self._cbs:
             cb.pe_update_playlist(list(self.playlist.values()))
 
-    #def playlist_item_del(self, si) -> None:
-    #    del self.songs[kk]
-    #    self.save()
-    #    for cb in self._cbs:
-    #        cb.pe_update_playlist(self.songs)
+    def playlist_item_del(self, si) -> None:
+        del self.playlist[si]
+        for cb in self._cbs:
+            cb.pe_update_playlist(list(self.playlist.values()))
 
     #def playlist_item_move(self, si, pos) -> None:
     #    pass
