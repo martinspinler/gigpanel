@@ -127,6 +127,9 @@ class LivelistPlaylistClient(PlaylistClient):
         self.send_msg('move', {'id': si, 'playlist_id': self.currentPlaylistId, 'pos': pos})
 
     def playlist_item_set(self, id: Optional[PlaylistItemId] = None, off: Optional[int] = None) -> None:
+        pass
+
+    def playlist_item_play(self, id: Optional[PlaylistItemId] = None, off: Optional[int] = None) -> None:
         self.send_msg('play', {'id': id, 'playlist_id': self.currentPlaylistId, 'off': off})
 
     def send_msg(self, msg: str, data: Any = {}) -> None:

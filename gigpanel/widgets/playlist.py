@@ -82,8 +82,8 @@ class PlaylistWidget(PlaylistEventListener, QWidget):
         addButton("Move down", lambda x: self.mv(+1))
         addButton("Delete", lambda x: self.delete())
         addButton("Add", self.add)
-        addButton("Prev", lambda x: self.app.pc.playlist_item_set(off=-1))
-        addButton("Next", lambda x: self.app.pc.playlist_item_set(off=+1))
+        addButton("Prev", lambda x: self.app.pc.playlist_item_play(off=-1))
+        addButton("Next", lambda x: self.app.pc.playlist_item_play(off=+1))
         addButton("Poweroff oscbox", lambda x: os.system(cmd))
         layout.addSpacing(40)
 
@@ -135,6 +135,7 @@ class PlaylistWidget(PlaylistEventListener, QWidget):
 
     def current_item_changed(self, ci: QPlaylistItem | None, pi: QPlaylistItem | None) -> None:
         if ci:
+            self.app.pc.playlist_item_set(ci.id)
             self.gp.loadSong(ci.pli)
 
     def item_activated(self, ci: QPlaylistItem) -> None:

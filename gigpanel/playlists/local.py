@@ -113,6 +113,9 @@ class LocalPlaylistClient(PlaylistClient):
     #def playlist_item_move(self, si, pos) -> None:
     #    pass
 
+    def playlist_item_play(self, id=None, off=None) -> None:
+        self.playlist_item_set(id, off)
+
     def playlist_item_set(self, id=None, off=None) -> None:
         pid = self.currentPliId if id is None else id
         keys = list(self.playlist.keys())

@@ -228,7 +228,7 @@ class GigPanelWindow(QMainWindow):
         if ac.args.fullscreen:
             self.setWindowState(Qt.WindowFullScreen)
 
-        self.tab_tempo.btn_next.clicked.connect(lambda x: app.pc.playlist_item_set(off=+1))
+        self.tab_tempo.btn_next.clicked.connect(lambda x: app.pc.playlist_item_play(off=+1))
 
     def onGeometryChanged(self, geometry: QRect) -> None:
         orientation_changed = set_style(self.app, geometry)

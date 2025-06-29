@@ -55,5 +55,8 @@ class PlaylistClient():
     def playlist_item_set(self, id: Optional[int] = None, off: int | None = None) -> None:
         pass
 
+    def playlist_item_play(self, id: Optional[int] = None, off: int | None = None) -> None:
+        pass
+
     async def run(self) -> None:
         pass
