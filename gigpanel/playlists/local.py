@@ -87,7 +87,7 @@ class LocalPlaylistClient(PlaylistClient):
     def save(self) -> None:
         with open(self._filename, 'w') as outfile:
             self.db['playlists'][1]['songs'] = {p: {'id': v.id, 'song_id': v.song.id} for p, v in self.playlist.items()}
-            yaml.dump(self.db, outfile)
+            yaml.dump(self.db, outfile, allow_unicode=True)
 
     def disconnect(self) -> None:
         pass
