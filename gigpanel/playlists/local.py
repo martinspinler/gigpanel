@@ -124,9 +124,10 @@ class LocalPlaylistClient(PlaylistClient):
                 pindex = len(self.playlist) - 1
         pid = keys[pindex]
 
-        pid = self.currentPliId = pid
-        for cb in self._cbs:
-            cb.pe_play(self.playlist[pid])
+        if self.currentPliId != pid:
+            self.currentPliId = pid
+            for cb in self._cbs:
+                cb.pe_play(self.playlist[pid])
 
     async def get_playlist(self) -> None:
         data = self.playlists[0]
