@@ -24,7 +24,8 @@ class PlaylistItem:
     id: PlaylistItemId
     song: Song
     pos: int
-    pages: Optional[list[int]] = None
+    pages: Optional[list[int]] = None  # client/instrument state
+    current_page: Optional[int] = None  # client/instrument state
 
 
 Songlist: TypeAlias = Dict[SongId, Song]

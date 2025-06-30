@@ -63,7 +63,8 @@ class DocumentWidget(QLabel):
         self.document.setRenderHint(hints)
         #self.document.setRenderBackend(doc.SplashBackend)
         #self.document.setRenderBackend(doc.ArthurBackend)
-        pg = song.pages[self.pli.pages[0] if self.pli.pages is not None else 0] if song.pages else 0
+        page = self.pli.current_page if self.pli.current_page else 0
+        pg = song.pages[self.pli.pages[page] if self.pli.pages is not None else 0] if song.pages else page
         self.loadPage(pg)
 
         #if 'Scenes' in song and song['Scenes']:
@@ -151,6 +152,9 @@ class DocumentWidget(QLabel):
 
         self.page = page
         self.page_index = index
+
+        # CHECKME: for song/pli with specific pages, will it work with offset?
+        self.pli.current_page = index
 
         mult = 2.1
         ps = self.page.pageSize()
