@@ -12,7 +12,7 @@ from ..song import Song, PlaylistItem, PlaylistItemId
 
 
 class LivelistPlaylistClient(PlaylistClient):
-    def __init__(self, url: Optional[str] = None, prefix: str = '', currentBand: int = 1, **kwargs):
+    def __init__(self, url: Optional[str] = None, prefix: str = '', currentBand: int = 1, **kwargs: Any) -> None:
         super().__init__()
         addr = urllib.parse.urlsplit(url)
         secure = "s" if addr.scheme == 'https' else ""

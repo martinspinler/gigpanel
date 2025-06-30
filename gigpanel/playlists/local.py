@@ -6,11 +6,11 @@ import os
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton
 
 from ..playlist import PlaylistClient
-from ..song import Song, PlaylistItem
+from ..song import Song, PlaylistItem, PlaylistItemId
 
 
 class ConfigDialog(QDialog):
-    def __init__(self, lpc):
+    def __init__(self, lpc: "LocalPlaylistClient") -> None:
         super().__init__()
         self.lpc = lpc
 
@@ -65,14 +65,14 @@ class LocalPlaylistClient(PlaylistClient):
         ]
 
         self.playlist = self.playlists[0]
-        self.currentPliId = None
+        self.currentPliId: PlaylistItemId | None = None
         self.songs = self.songlist
 
         bm = self.db.get("bookmarks")
         if bm is not None:
             self.bookmarks = {k: (self.playlist[v] if v in self.playlist else None) for k, v in bm.items()}
 
-    def show_config(self):
+    def show_config(self) -> None:
         ConfigDialog(self).exec_()
 
     @classmethod
@@ -105,7 +105,7 @@ class LocalPlaylistClient(PlaylistClient):
         for cb in self._cbs:
             cb.pe_update_playlist(list(self.playlist.values()))
 
-    def playlist_item_del(self, si) -> None:
+    def playlist_item_del(self, si: PlaylistItemId) -> None:
         del self.playlist[si]
         for cb in self._cbs:
             cb.pe_update_playlist(list(self.playlist.values()))
@@ -113,10 +113,10 @@ class LocalPlaylistClient(PlaylistClient):
     #def playlist_item_move(self, si, pos) -> None:
     #    pass
 
-    def playlist_item_play(self, id=None, off=None) -> None:
+    def playlist_item_play(self, id: PlaylistItemId | None = None, off: int | None = None) -> None:
         self.playlist_item_set(id, off)
 
-    def playlist_item_set(self, id=None, off=None) -> None:
+    def playlist_item_set(self, id: PlaylistItemId | None = None, off: int | None = None) -> None:
         pid = self.currentPliId if id is None else id
         keys = list(self.playlist.keys())
 

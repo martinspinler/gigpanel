@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from .song import Song, Songlist, Playlist, PlaylistItem
+from .song import Song, Songlist, Playlist, PlaylistItem, PlaylistItemId
 
 
 class PlaylistEventListener():
@@ -25,7 +25,7 @@ class PlaylistClient():
         self._cbs: list[PlaylistEventListener] = []
         self.bookmarks: dict[str, PlaylistItem | None] = {}
 
-    def show_config(self):
+    def show_config(self) -> None:
         pass
 
     def add_callback(self, cb: PlaylistEventListener) -> None:
@@ -46,16 +46,16 @@ class PlaylistClient():
     def playlist_item_add(self, si: Song) -> None:
         pass
 
-    def playlist_item_del(self, si: int) -> None:
+    def playlist_item_del(self, si: PlaylistItemId) -> None:
         pass
 
-    def playlist_item_move(self, si: int, pos: int) -> None:
+    def playlist_item_move(self, si: PlaylistItemId, pos: int) -> None:
         pass
 
-    def playlist_item_set(self, id: Optional[int] = None, off: int | None = None) -> None:
+    def playlist_item_set(self, id: Optional[PlaylistItemId] = None, off: int | None = None) -> None:
         pass
 
-    def playlist_item_play(self, id: Optional[int] = None, off: int | None = None) -> None:
+    def playlist_item_play(self, id: Optional[PlaylistItemId] = None, off: int | None = None) -> None:
         pass
 
     async def run(self) -> None:
