@@ -68,6 +68,10 @@ class LocalPlaylistClient(PlaylistClient):
         self.currentPliId = None
         self.songs = self.songlist
 
+        bm = self.db.get("bookmarks")
+        if bm is not None:
+            self.bookmarks = {k: (self.playlist[v] if v in self.playlist else None) for k, v in bm.items()}
+
     def show_config(self):
         ConfigDialog(self).exec_()
 

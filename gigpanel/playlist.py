@@ -23,6 +23,7 @@ class PlaylistEventListener():
 class PlaylistClient():
     def __init__(self, **kwargs: Any) -> None:
         self._cbs: list[PlaylistEventListener] = []
+        self.bookmarks: dict[str, PlaylistItem | None] = {}
 
     def show_config(self):
         pass
