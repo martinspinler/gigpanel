@@ -13,6 +13,7 @@ class Song:
     name: str
     store: Optional[str] = None
     user_id: Optional[str] = None
+    file: Optional[str] = None
     filename: Optional[str] = None
     pages: Optional[list[int]] = None
     bpm: Optional[int] = None

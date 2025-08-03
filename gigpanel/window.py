@@ -50,9 +50,9 @@ def song_update_path(song: Song, app: Application) -> None:
 
     if file:
         try:
-            song.filename = app.config['prefixes'][store['prefix']] + store['path'] + file + store['suffix']
+            song.file = app.config['prefixes'][store['prefix']] + store['path'] + file + store['suffix']
         except Exception:
-            song.filename = None
+            song.file = None
 
     if (song.filename is None or not QFile(song.filename).exists()):
         pattern = song.pattern if song.pattern is not None else (store['pattern'] if 'pattern' in store else None)
@@ -68,7 +68,7 @@ def song_update_path(song: Song, app: Application) -> None:
                     fpattern = pattern.format(name=fn, instrument=instrument)
                     filename = app.config['prefixes'][store['prefix']] + fpattern
                     if QFile(filename).exists():
-                        song.filename = filename
+                        song.file = filename
                         break
                 else:
                     continue
@@ -115,7 +115,7 @@ class GigPanelWidget(PlaylistEventListener, QWidget):
 
     def loadSong(self, pli: PlaylistItem) -> None:
         song = pli.song
-        if song.filename:
+        if song.file:
             self.document.loadSong(pli)
         if song.bpm:
             self.tempo.setTempo(song.bpm)

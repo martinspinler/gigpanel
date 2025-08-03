@@ -55,7 +55,7 @@ class DocumentWidget(QLabel):
 
         self.page = None
         self.page_splitindex = 0
-        self.document = doc.load(song.filename)
+        self.document = doc.load(song.file)
         if not self.document:
             return
 
