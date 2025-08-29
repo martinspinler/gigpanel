@@ -60,7 +60,7 @@ class LocalPlaylistClient(PlaylistClient):
                             self.songlist.update({f: song})
 
         self.playlists = [
-            {pi['id']: PlaylistItem(pi['id'], self.songlist[pi['song_id']], i) for i, pi in enumerate(pv['songs'].values())}
+            {pid: PlaylistItem(pid, self.songlist[pi['song_id']], i) for i, (pid, pi) in enumerate(pv['songs'].items())}
             for pk, pv in self.db['playlists'].items()
         ]
 
