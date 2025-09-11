@@ -183,10 +183,11 @@ class LivelistPlaylistClient(PlaylistClient):
             cb.pe_update_playlist(list(self.playlist.values()))
 
     def receive_playlist_current_item(self, data: Any) -> None:
-        cpid = data['playlist_item_id']
-        cpi = self.playlist[cpid]
-        for cb in self._cbs:
-            cb.pe_play(cpi)
+        cpid = data.get('playlist_item_id')
+        if cpid:
+            cpi = self.playlist[cpid]
+            for cb in self._cbs:
+                cb.pe_play(cpi)
 
     def receive_play(self, data: Any) -> None:
         pli = self.playlist[data['id']]
