@@ -126,9 +126,8 @@ async def amain() -> None:
 
 def main() -> None:
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-    use_qasync_workaround = True
     try:
-        if use_qasync_workaround:
+        if hasattr(qasync, '_set_event_loop_policy'):
             with qasync._set_event_loop_policy(qasync.DefaultQEventLoopPolicy()):
                 runner = asyncio.runners.Runner()
                 try:
