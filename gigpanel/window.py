@@ -52,6 +52,7 @@ def try_song_file(song: Song, app: Application, store: Any, file: str) -> None:
 def song_update_path(song: Song, app: Application) -> None:
     st = song.store if song.store is not None else app.config['defaultStore']
     store = app.config['stores'][st]
+    override = app.config.get('override', {})
 
     file = song.filename
     if file:
@@ -62,6 +63,10 @@ def song_update_path(song: Song, app: Application) -> None:
         if pattern is not None:
             for fn in ([file] if file else []) + [song.name]:
                 instrument_suffixes = ['-Piano', ' - Piano', '-Electric_Piano', ' Piano', '']
+                if song.name in override:
+                    if 'instrument' in override[song.name]:
+                        instrument_suffixes = ["-" + override[song.name]['instrument']]
+
                 if app.appconfig.horizontal:
                     instrument_suffixes = [x + "-L" for x in instrument_suffixes] + instrument_suffixes
                 else:
