@@ -7,6 +7,8 @@ dependencies = [
 	"midibox",
 	"python-poppler-qt5",
 	"pyfluidsynth",
+	"pyyaml",
+	"PyQtWebEngine",
 ]
 
 [project.optional-dependencies]
