@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QPushButton, QLabel
 from PyQt5.QtCore import Qt, QTimer
 
@@ -17,7 +17,7 @@ class TempoWidget(QWidget):
         fs.start(driver="pulseaudio")
         fs.program_select(9, sfid, 128, 0)
 
-        self.note = None
+        self.note: Optional[int] = None
         self.timer = QTimer()
         self.timer.timeout.connect(self.tempoTimeout)
         self.timer.setTimerType(Qt.TimerType.PreciseTimer)
