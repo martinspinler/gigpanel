@@ -42,17 +42,20 @@ def set_style(app: Application, geometry: QRect) -> bool:
     return prev_horizontal != horizontal
 
 
+def try_song_file(song: Song, app: Application, store: Any, file: str) -> None:
+    try:
+        song.file = app.config['prefixes'][store['prefix']] + store['path'] + file + store['suffix']
+    except Exception:
+        song.file = None
+
+
 def song_update_path(song: Song, app: Application) -> None:
     st = song.store if song.store is not None else app.config['defaultStore']
     store = app.config['stores'][st]
 
     file = song.filename
-
     if file:
-        try:
-            song.file = app.config['prefixes'][store['prefix']] + store['path'] + file + store['suffix']
-        except Exception:
-            song.file = None
+        try_song_file(song, app, store, file)
 
     if (song.filename is None or not QFile(song.filename).exists()):
         pattern = song.pattern if song.pattern is not None else (store['pattern'] if 'pattern' in store else None)
@@ -73,6 +76,9 @@ def song_update_path(song: Song, app: Application) -> None:
                 else:
                     continue
                 break
+
+    if song.file is None:
+        try_song_file(song, app, store, song.name)
 
 
 class GigPanelWidget(PlaylistEventListener, QWidget):
