@@ -1,0 +1,213 @@
+/*
+* ireal-renderer CSS.
+*/
+@import 'style.css';
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans+Condensed:wght@700&display=swap');
+
+irr-char, irr-lbar, irr-rbar, irr-measure, irr-annot {
+	font-family: iRealFont;
+	margin-top: 0.2em;
+}
+
+.irr-small {
+	font-stretch: condensed !important;
+}
+
+/* Outer container; if attribute hilite is set, hiliting is active */
+irr-chords {
+	font-family: "Open Sans Condensed", sans-serif;
+	box-sizing: border-box;
+	line-height:normal;
+	display: grid;
+	grid-row-gap: 0.4em;
+	grid-template-columns: repeat(16, 6.25%);
+	width: calc(100% - 1ch);
+	margin-left:1ch;
+	page-break-inside:avoid;
+}
+
+/* The cell contains bars, chords, annots, and comments */
+irr-cell {
+	vertical-align: top;
+	position: relative;
+	/* margin-top: 2.5em; */
+	white-space:nowrap;
+}
+
+/* left and right bars */
+irr-lbar {
+	margin-right: 4px;
+}
+irr-rbar {
+	float: right;
+}
+/* repeat symbols */
+irr-char.Repeated-Figure2 {
+	float: right;
+}
+irr-char.Repeated-Figure3 {
+	float: right;
+	margin-right: -0.4em;
+}
+irr-char.irr-root {
+	padding-left: 1ch;
+}
+
+irr-chord {
+	overflow: visible;
+	position: relative;
+}
+
+irr-chord>sup, irr-chord>sub {
+  vertical-align: baseline;
+  position: relative;
+}
+
+irr-chord>sup {
+  margin-left: -0.1em;
+  top: -0.6em;
+  font-size: 0.6em;
+}
+
+irr-chord>sub {
+  top: 0.4em;
+  font-size: 0.6em;
+  font-stretch: condensed;
+}
+
+irr-chord>sup+sub {
+  /* both: move the subscript in */
+  margin-left: -0.3em;
+}
+
+/* Alternate chords above the regular chord */
+irr-chord>irr-chord {
+	font-size: 0.6em;
+	transform: translate(30%, -60%);
+	position: absolute;
+}
+
+/* The "over note" in regular chords */
+irr-over {
+	display: block;
+	margin-top: -0.1em;
+	margin-left: 1ch;
+	font-size: 0.8em;
+}
+irr-over>sup {
+	font-size: 0.6em;
+	margin-left: -0.2em;
+}
+
+/* The "over note" in alt chords is behind the note */
+irr-chord>irr-chord>irr-over {
+	display: inline;
+	font-size: 0.8em;
+	margin:  0;
+}
+irr-over:before {
+	content:"/";
+}
+
+/* Measurement, like 4/4 or 3/4 */
+irr-measure {
+	font-size: 0.9em;
+	font-weight: normal;
+	position: absolute;
+	transform: translate(-0.5ch, -0.15em);
+	line-height: 1.05em;
+	text-align: center;
+}
+
+/* vertical spacer */
+irr-spacer {
+	grid-column-start: 1;
+	grid-column-end: 17;
+}
+
+/* Sections like "in", "A", "B" etc */
+irr-section {
+	float: left;
+	position: absolute;
+	top: -1em;
+	left: -0.2em;
+	font-family: sans-serif;
+	font-size: 0.5em;
+	font-weight: bold;
+	margin-left: -2ch;
+	padding: 0px 4px;
+	background-color: #ccc;
+}
+
+/* comments */
+irr-comment {
+	position: absolute;
+	left: 0;
+	overflow: visible;
+	font: bold 0.5em monospace;
+	white-space: pre;
+	letter-spacing: 0;
+	top: 2.5em;
+}
+irr-cell.irr-comment {
+	padding-bottom: 0.3em;
+}
+
+/* Repeat bars (1., 2. etc) */
+irr-repeat {
+	border-left: 1px solid black;
+	border-top: 1px solid black;
+	width: 200%;
+	text-align: left;
+	padding-left: 2px;
+	font-size: 0.3em;
+	font-weight: bold;
+	position: absolute;
+	left: 0;
+	top: -0.8em;
+}
+irr-repeat:after {
+	content: ".";
+}
+
+/* Annotations above the chord, like Coda etc */
+irr-annot {
+	font-size: 0.8em;
+	position: absolute;
+	top: -0.8em;
+	left: 0.8em;
+}
+
+/* special elements like bars, repeats, coda, measure etc 
+   are painted red if the hilite attribute is set */
+
+irr-chords[hilite] irr-chord>irr-chord,
+irr-chords[hilite] irr-over,
+irr-chords[hilite] irr-annot,
+irr-chords[hilite] irr-repeat,
+irr-chords[hilite] irr-measure,
+irr-chords[hilite] irr-comment {
+	color: red !important;
+}
+irr-chords[hilite] irr-section{
+	background-color: #fcc;
+}
+irr-chords[hilite] irr-repeat {
+	border-left-color: red;
+	border-top-color: red;
+}
+irr-chords[hilite] irr-char.irr-root {
+	color: lightblue !important;
+}
+
+.No-Chord:before {
+	font-size: 0.8em;
+	content: "N.C.";
+}
+
+@media print {
+	irr-section {
+		border: 1px solid grey;
+		padding: 0px 3px;
+	}
+}
