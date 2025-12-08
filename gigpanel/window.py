@@ -1,6 +1,7 @@
 from typing import Callable, Any
-
+import os
 import mido
+import threading
 
 from .app import Application
 from .widgets import DocumentWidget, DocumentWidgetScrollArea
@@ -11,7 +12,8 @@ from PyQt5.QtWidgets import QWidget, QMainWindow, QVBoxLayout, QStackedLayout, Q
 from PyQt5.QtCore import Qt, QFile, QPoint, QSize, QRect
 from PyQt5.QtGui import QCloseEvent
 
-from PyQt5.QtCore import QSettings
+from PyQt5.QtCore import QSettings, QUrl
+from PyQt5.QtWebEngineWidgets import QWebEngineView
 
 from midibox.widget import MidiboxQuickWidget
 
@@ -110,8 +112,12 @@ class GigPanelWidget(PlaylistEventListener, QWidget):
 
         self.document = DocumentWidget(app.appconfig)
         sa = DocumentWidgetScrollArea(self.document)
+        self.wev = QWebEngineView()
 
         self.stacked_layout.addWidget(sa)
+        self.stacked_layout.addWidget(self.wev)
+
+        self._irb = {}
 
         v = QVBoxLayout()
         layout.addLayout(v)
@@ -124,10 +130,35 @@ class GigPanelWidget(PlaylistEventListener, QWidget):
 
         self.songs: dict[int, Song] = {} # TODO: Is key really int?
 
+        self._ireal_loaded = threading.Event()
+
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        dir_path += "/../ireal"
+        print(dir_path)
+        self.wev.load(QUrl(f"file://{dir_path}/index.html"))
+        self.wev.page().loadFinished.connect(self._load_ireal_playlist)
+        self.wev.setZoomFactor(2)
+
+    def _load_ireal_playlist(self):
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        full_path = f"{dir_path}/../ireal/jazz1600.link"
+        irb = str(open(full_path, "rb").read())
+        self.wev.page().runJavaScript('window.makePlaylist("' + irb + '");')
+        self.wev.page().runJavaScript("window.playlist", self._ireal_song_loaded)
+
+    def _ireal_song_loaded(self, playlist):
+        self._irb = {song['title']: i for i, song in enumerate(playlist['songs'])}
+        self._ireal_loaded.set()
+
     def loadSong(self, pli: PlaylistItem) -> None:
         song = pli.song
-        if song.file:
+        if False and song.file:
+            self.stacked_layout.setCurrentIndex(0)
             self.document.loadSong(pli)
+        elif song.name in self._irb:
+            self.stacked_layout.setCurrentIndex(1)
+            self.wev.page().runJavaScript(f"window.renderSong({self._irb[song.name]});")
+
         if song.bpm:
             self.tempo.setTempo(song.bpm)
 
