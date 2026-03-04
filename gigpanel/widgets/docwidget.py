@@ -16,7 +16,7 @@ try:
     from .utils import get_bounding_box
 except Exception:
     def get_bounding_box(img: QImage) -> QRect:
-        return QRect(0, 0, 0, 0)
+        return img.rect()
 
 
 class DocumentWidget(QLabel):
@@ -174,17 +174,29 @@ class DocumentWidget(QLabel):
         dpi = int(72 * mult)
         img = self.page.renderToImage(dpi, dpi, 0, yfrom, ps.width(), yto)
 
-        if False: # and np is not None:
-            rect = get_bounding_box(img).adjusted(*(lambda x: [-x, -x, x, x])(20))
-            img = img.copy(rect)
+        if True: # and np is not None:
+            rect_orig = get_bounding_box(img)
+            #rect_orig = img.rect()
+            n = 20
+            arect = [-n, -n, 2*n, 2*n]
+            rect = rect_orig.adjusted(*arect)
         elif self.page_boundingbox and self.mode == self.MODE_NORMAL:
             p1 = QPoint(*self.page_boundingbox[0:2])
             p2 = QPoint(*self.page_boundingbox[2:4])
             rect = QRect(p1 * mult, p2 * mult)
             img = img.copy(rect)
 
-        img2 = img.scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        pixmap = QPixmap.fromImage(img2)
+        pm2 = QPixmap(rect.size())
+        pm2.fill()
+        p = QPainter(pm2)
+        #p.drawPixmap(rect_orig.topLeft() - rect.topLeft(), pixmap)
+        p.drawImage(n, n, img, rect.left(), rect.top())
+        #rect.topLeft() - rect_orig.topLeft()
+        p.end()
+
+        #img2 = img.scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        #pixmap = QPixmap.fromImage(img2)
+        pixmap = pm2.scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
         if self.mode == self.MODE_SET_SPLITPOINTS:
             p = QPainter(pixmap)
