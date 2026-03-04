@@ -9,13 +9,9 @@ class TempoWidget(QWidget):
     def __init__(self, btn_snd) -> None:
         QWidget.__init__(self)
 
-        fs = fluidsynth.Synth()
-        self.fs = fs
+        self._fs_started = False
+        self.fs = None
         self.btn_snd = btn_snd
-
-        sfid = fs.sfload("/usr/share/soundfonts/FluidR3_GM.sf2")
-        fs.start(driver="pulseaudio")
-        fs.program_select(9, sfid, 128, 0)
 
         self.note: Optional[int] = None
         self.timer = QTimer()
@@ -40,6 +36,15 @@ class TempoWidget(QWidget):
             layout.setStretchFactor(btn, 4)
         self.setLayout(layout)
 
+    def fsStart(self):
+        if not self._fs_started:
+            if self.fs is None:
+                self.fs = fluidsynth.Synth()
+            self._fs_started = True
+            self.fs.start(driver="pulseaudio")
+            sfid = self.fs.sfload("/usr/share/soundfonts/FluidR3_GM.sf2")
+            self.fs.program_select(9, sfid, 128, 0)
+
     def setTempo(self, bpm: float) -> None:
         if bpm:
             self.timer.start()
@@ -59,7 +64,10 @@ class TempoWidget(QWidget):
         self.tempoBtns[st].setChecked(False)
         self.tempoBtns[st_next].setChecked(True)
 
-        if self.fs:
+        if self.btn_snd.isChecked():
+            self.fsStart()
+
+        if self.fs is not None:
             if self.note is not None:
                 self.fs.noteoff(9, self.note)
             self.note = 34 if st_next == 0 else 33
