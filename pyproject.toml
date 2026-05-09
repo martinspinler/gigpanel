@@ -4,7 +4,7 @@ version = "1.0.0"
 dependencies = [
 	"qasync",
 	"aiohttp",
-	"midibox",
+	"midibox[gui]",
 	"python-poppler-qt5",
 	"pyfluidsynth",
 	"pyyaml",
