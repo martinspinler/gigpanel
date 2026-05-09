@@ -1,4 +1,4 @@
-from typing import Dict, Optional, TypeAlias
+from typing import Dict, Optional, TypeAlias, Any
 from dataclasses import dataclass
 
 
@@ -18,6 +18,7 @@ class Song:
     pages: Optional[list[int]] = None
     bpm: Optional[int] = None
     pattern: Optional[str] = None
+    meta: Optional[Any] = None
 
 
 @dataclass
