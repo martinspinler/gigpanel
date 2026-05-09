@@ -44,7 +44,9 @@ def set_style(app: Application, geometry: QRect) -> bool:
 
 def try_song_file(song: Song, app: Application, store: Any, file: str) -> None:
     try:
-        song.file = app.config['prefixes'][store['prefix']] + store['path'] + file + store['suffix']
+        file = app.config['prefixes'][store['prefix']] + store['path'] + file + store['suffix']
+        if QFile(file).exists():
+            song.file = file
     except Exception:
         song.file = None
 
