@@ -32,14 +32,14 @@ class LocalPlaylistClient(PlaylistClient):
         self._filename: str = kwargs["dbpath"]
         self._stores = kwargs["stores"]
         self._prefixes = kwargs["prefixes"]
-        defstore = kwargs.get("defaultStore")
+        self._default_store = kwargs.get("defaultStore")
         self.db = yaml.load(open(self._filename, 'r').read(), yaml.Loader)
 
         self.songlist = {
             k: Song(
                 id=k,
                 name=s['name'],
-                store=(s['store'] if 'store' in s else defstore),
+                store=(s['store'] if 'store' in s else self._default_store),
                 filename=s.get('filename'),
                 pages=[p-1 for p in s['pages']] if 'pages' in s else None,
             ) for k, s in self.db['songlist'].items()
@@ -51,12 +51,15 @@ class LocalPlaylistClient(PlaylistClient):
                 sname = sls['store']
                 store = self._stores[sname]
                 pfx = self._prefixes[store['prefix']]
-                path = pfx + store['path']
+                # 'path' and 'pattern' are optional in the store config (e.g. the
+                # 'mse' store uses only prefix + suffix); default to empty/no-op.
+                path = pfx + store.get('path', '')
+                suffix = store.get('suffix', '.pdf')
                 for folder in sls['folders']:
                     files = os.listdir(path + folder)
                     for f in files:
-                        if f.endswith(store['suffix']):
-                            song = Song(id=f, name=f[:-len(store['suffix'])], store=sname, pattern=f'{folder}/{{name}}.pdf')
+                        if f.endswith(suffix):
+                            song = Song(id=f, name=f[:-len(suffix)], store=sname, pattern=f'{folder}/{{name}}{suffix}')
                             self.songlist.update({f: song})
 
         self.playlists = [
@@ -74,6 +77,41 @@ class LocalPlaylistClient(PlaylistClient):
 
     def show_config(self) -> None:
         ConfigDialog(self).exec_()
+
+    def resolve_song_file(self, song: Song, horizontal: bool = False) -> None:
+        """Resolve ``song.file`` from the local {prefix, suffix} config.
+
+        LPC stores are plain PDF collections; songs discovered by the folder
+        scan carry their own per-song pattern ('folder/{name}{suffix}'), so
+        resolution is: format the pattern with the song name, prepend the
+        store prefix, and check existence. A direct prefix+name fallback
+        covers explicit songlist entries that omit a pattern. Orientation
+        is ignored (LPC sheets have no -L/-P variants).
+        """
+        st = song.store if song.store is not None else self._default_store
+        store = self._stores[st]
+        prefix = self._prefixes[store['prefix']]
+        suffix = store.get('suffix', '.pdf')
+        base = prefix + store.get('path', '')
+
+        pattern = song.pattern if song.pattern is not None else store.get('pattern')
+        if pattern is not None:
+            candidate = prefix + pattern.format(name=song.name, instrument='')
+            if os.path.isfile(candidate):
+                song.file = candidate
+                return
+
+        for name in (song.filename, song.name):
+            if not name:
+                continue
+            candidate = base + name
+            if not candidate.endswith(suffix):
+                candidate += suffix
+            if os.path.isfile(candidate):
+                song.file = candidate
+                return
+
+        song.file = None
 
     @classmethod
     def to_yaml(cls, dumper: yaml.Dumper, data: Any) -> Any:

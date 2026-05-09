@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from .song import Song, Songlist, Playlist, PlaylistItem, PlaylistItemId
 
@@ -35,6 +35,16 @@ class PlaylistClient():
         pass
 
     async def get_songlist(self) -> None:
+        pass
+
+    def resolve_song_file(self, song: Song, horizontal: bool = False) -> None:
+        """Resolve ``song.file`` to a local sheet path.
+
+        Each playlist client owns the finding strategy that matches its config
+        source: online clients use the shared :mod:`livelist.songfind` finder
+        with server-fetched band config; LocalPlaylistClient uses its local
+        {prefix, suffix} config. The default is a no-op (song.file unchanged).
+        """
         pass
 
     async def get_playlist(self) -> None:

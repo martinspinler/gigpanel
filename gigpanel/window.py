@@ -8,7 +8,7 @@ from .widgets import PlaylistWidget
 from .widgets import HidableTabPanel, TabTempoWidget, TempoWidget, TabBookmarksWidget
 
 from PyQt5.QtWidgets import QWidget, QMainWindow, QVBoxLayout, QStackedLayout, QDockWidget
-from PyQt5.QtCore import Qt, QFile, QPoint, QSize, QRect
+from PyQt5.QtCore import Qt, QPoint, QSize, QRect
 from PyQt5.QtGui import QCloseEvent
 
 from PyQt5.QtCore import QSettings
@@ -42,50 +42,14 @@ def set_style(app: Application, geometry: QRect) -> bool:
     return prev_horizontal != horizontal
 
 
-def try_song_file(song: Song, app: Application, store: Any, file: str) -> None:
-    try:
-        file = app.config['prefixes'][store['prefix']] + store['path'] + file + store['suffix']
-        if QFile(file).exists():
-            song.file = file
-    except Exception:
-        song.file = None
-
-
 def song_update_path(song: Song, app: Application) -> None:
-    st = song.store if song.store is not None else app.config['defaultStore']
-    store = app.config['stores'][st]
-    override = app.config.get('override', {})
+    """Resolve ``song.file`` to a local sheet path.
 
-    file = song.filename
-    if file:
-        try_song_file(song, app, store, file)
-
-    if (song.filename is None or not QFile(song.filename).exists()):
-        pattern = song.pattern if song.pattern is not None else (store['pattern'] if 'pattern' in store else None)
-        if pattern is not None:
-            for fn in ([file] if file else []) + [song.name]:
-                instrument_suffixes = ['-Piano', ' - Piano', '-Electric_Piano', ' Piano', '']
-                if song.name in override:
-                    if 'instrument' in override[song.name]:
-                        instrument_suffixes = ["-" + override[song.name]['instrument']]
-
-                if app.appconfig.horizontal:
-                    instrument_suffixes = [x + "-L" for x in instrument_suffixes] + instrument_suffixes
-                else:
-                    instrument_suffixes = [x + "-P" for x in instrument_suffixes] + instrument_suffixes
-
-                for instrument in instrument_suffixes:
-                    fpattern = pattern.format(name=fn, instrument=instrument)
-                    filename = app.config['prefixes'][store['prefix']] + fpattern
-                    if QFile(filename).exists():
-                        song.file = filename
-                        break
-                else:
-                    continue
-                break
-
-    if song.file is None:
-        try_song_file(song, app, store, song.name)
+    Delegates to the active playlist client's ``resolve_song_file``: each
+    client owns the finding strategy that matches its config source (online →
+    shared songfind with server config; LocalPlaylistClient → local config).
+    """
+    app.pc.resolve_song_file(song, app.appconfig.horizontal)
 
 
 class GigPanelWidget(PlaylistEventListener, QWidget):

@@ -25,7 +25,7 @@ from midibox.controller import BaseMidibox
 import midibox.backends as mb_backends
 
 from .window import GigPanelWindow
-from .playlists import LivelistPlaylistClient, LocalPlaylistClient
+from .playlists import LocalPlaylistClient, SocketioLivelistPlaylistClient
 
 from .app import Application
 from .appconfig import AppConfig
@@ -98,11 +98,21 @@ async def amain() -> None:
     defaultPC = ac.args.playlist_client or cfg['defaultPlaylistClient']
     cfg_pc = cfg['playlistClients'].get(defaultPC, {})
     playlist_client_class = {
-        "livelist": LivelistPlaylistClient,
+        "socketiolivelist": SocketioLivelistPlaylistClient,
         "local": LocalPlaylistClient,
-    }.get(cfg_pc.get("pc_type"), LivelistPlaylistClient)
+    }.get(cfg_pc.get("pc_type"), SocketioLivelistPlaylistClient)
 
-    app.pc = playlist_client_class(**cfg_pc, stores=cfg['stores'], prefixes=cfg['prefixes'])
+    # sheet_store_* may be set globally or per-playlistClient (per-band local
+    # prefix/instrument). Let the per-client value override the global one.
+    pc_overrides = {k: cfg_pc[k] for k in ('sheet_store_prefix', 'sheet_store_instrument') if k in cfg_pc}
+    app.pc = playlist_client_class(
+        **{k: v for k, v in cfg_pc.items() if k not in ('sheet_store_prefix', 'sheet_store_instrument')},
+        stores=cfg.get('stores'),
+        prefixes=cfg.get('prefixes'),
+        sheet_store_prefix=cfg.get('sheet_store_prefix', ''),
+        sheet_store_instrument=cfg.get('sheet_store_instrument'),
+        **pc_overrides,
+    )
 
     gpwindow = GigPanelWindow(cfg_pc, app)
     gpwindow.show()

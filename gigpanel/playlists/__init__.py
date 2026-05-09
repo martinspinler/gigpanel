@@ -1,4 +1,4 @@
 from .local import LocalPlaylistClient
-from .livelist import LivelistPlaylistClient
+from .socketiolivelist import SocketioLivelistPlaylistClient
 
-__all__ = ["LocalPlaylistClient", "LivelistPlaylistClient"]
+__all__ = ["LocalPlaylistClient", "PlaylistClient", "SocketioLivelistPlaylistClient"]

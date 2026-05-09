@@ -15,6 +15,14 @@ stores:
 defaultStore: arrangements
 defaultPlaylistClient: mygreatband
 
+# Online (socketiolivelist) sheet-store resolution.
+# The {patterns, instruments} config comes from the server's band DB
+# (fetched with the songlist and cached for offline use); only the
+# machine-specific filesystem prefix lives here. sheet_store_instrument
+# selects which instrument the gigpanel auto-picks (no dialog).
+sheet_store_prefix: ''
+sheet_store_instrument: 'pno'
+
 playlistClients:
   mygreatband:
     currentBand: 1

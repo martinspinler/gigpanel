@@ -1,8 +1,9 @@
 from typing import Optional
+import os
 
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QAbstractItemView
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFileIconProvider, QGridLayout, QSizePolicy
-from PyQt5.QtCore import Qt, QFile, QItemSelectionModel, QRegExp
+from PyQt5.QtCore import Qt, QItemSelectionModel, QRegExp
 
 from ..app import Application
 from ..song import Song, Songlist
@@ -18,12 +19,14 @@ class SonglistItem(QListWidgetItem):
         self.song = song
         self.file_exists = False
 
-        if song.filename:
-            if QFile(song.filename).exists():
-                self.file_exists = True
-                self.setIcon(QFileIconProvider().icon(QFileIconProvider.File))
-            else:
-                self.setIcon(QFileIconProvider().icon(QFileIconProvider.Trashcan))
+        # Icon reflects whether a sheet file was resolved for this song
+        # (by the shared finder / legacy finder in loadSongs), rather than
+        # probing the raw DB filename string.
+        if song.file and os.path.isfile(song.file):
+            self.file_exists = True
+            self.setIcon(QFileIconProvider().icon(QFileIconProvider.File))
+        else:
+            self.setIcon(QFileIconProvider().icon(QFileIconProvider.Trashcan))
         #if 'Flags' in song:
         #    self.setIcon(QFileIconProvider().icon(QFileIconProvider.Desktop))
 

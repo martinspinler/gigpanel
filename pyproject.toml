@@ -2,19 +2,18 @@
 name = "gigpanel"
 version = "1.0.0"
 dependencies = [
-	"qasync",
+	"platformdirs",
+	"qasync @ git+https://github.com/martinspinler/qasync",
 	"aiohttp",
 	"midibox[gui]",
 	"python-poppler-qt5",
 	"pyfluidsynth",
 	"pyyaml",
 	"PyQtWebEngine",
+	"livelist[client] @ git+https://github.com/martinspinler/livelist",
 ]
 
 [project.optional-dependencies]
-all = [
-	"platformdirs",
-]
 box = [
 	"numpy",
 ]
