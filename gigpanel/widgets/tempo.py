@@ -84,12 +84,15 @@ class TabTempoWidget(QWidget):
         self.btn_snd = QPushButton("🕪")
         self.btn_snd.setCheckable(True)
 
+        self.notes = QLabel()
+
         self.tempo = TempoWidget(self.btn_snd)
 
         layout = QHBoxLayout()
         layout.addWidget(self.tempo)
         layout.setStretch(0, 1)
 
+        layout.addWidget(self.notes)
         layout.addWidget(self.btn_snd)
         layout.addWidget(self.btn_next)
         layout.addWidget(self.btn_preset)

@@ -134,6 +134,7 @@ class GigPanelWidget(PlaylistEventListener, QWidget):
             self.tempo.setTempo(song.bpm)
 
         bp = self.wnd.tab_tempo.btn_preset
+        notes = self.wnd.tab_tempo.notes
         qbox = self.wnd.mbview.qmidibox
         mpresets = [k for k, v in qbox._presets.items() if v.label == song.name]
         dplabel = self.app.config.get('midibox', {}).get('default-preset', None)
@@ -151,6 +152,12 @@ class GigPanelWidget(PlaylistEventListener, QWidget):
             bp.setEnabled(False)
             bp.setText("Preset (-)")
             bp.clicked.connect(lambda x: None)
+
+        try:
+            if song is not None:
+                notes.setText(song.name + " | " + song.meta['key'])
+        except Exception:
+            pass
 
     def setPreset(self, p: int) -> None:
         qbox = self.wnd.mbview.qmidibox
