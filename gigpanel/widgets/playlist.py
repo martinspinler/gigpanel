@@ -106,8 +106,9 @@ class PlaylistWidget(PlaylistEventListener, QWidget):
                 self.playlist.setCurrentItem(pi)
 
     def pe_play(self, pli: PlaylistItem) -> None:
-        item = self.playlist.items_by_id[pli.id]
-        self.playlist.setCurrentRow(self.playlist.row(item))
+        item = None if pli is None else self.playlist.items_by_id.get(pli.id)
+        row = -1 if item is None else self.playlist.row(item)
+        self.playlist.setCurrentRow(row)
 
     def add(self, ch: QPushButton) -> None:
         d = SongListDialog(self.gpwindow, self.app).get_songs()

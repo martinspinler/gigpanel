@@ -67,10 +67,12 @@ class BookmarksWidget(PlaylistEventListener, QWidget):
 
     def pe_play(self, pi: PlaylistItem) -> None:
         self.current_item = pi
+        target = None
 
-        name = pi.song.name
-        keys = [k for k, v in self.bookmarks.items() if v is not None and v.song.name == name]
-        target = keys[0] if keys else None
+        if pi is not None:
+            name = pi.song.name
+            keys = [k for k, v in self.bookmarks.items() if v is not None and v.song.name == name]
+            target = keys[0] if keys else None
         self.switch_buttons(target)
 
 
