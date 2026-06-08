@@ -48,7 +48,10 @@ class TempoWidget(QWidget):
     def setTempo(self, bpm: float) -> None:
         if bpm:
             self.timer.start()
-            self.timer.setInterval(int(60000 // bpm))
+            try:
+                self.timer.setInterval(int(60000 // bpm))
+            except Exception:
+                pass
             self.tempoText.setText(str(bpm))
         else:
             self.timer.stop()
