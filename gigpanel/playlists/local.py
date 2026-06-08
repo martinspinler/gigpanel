@@ -70,7 +70,7 @@ class LocalPlaylistClient(PlaylistClient):
 
         bm = self.db.get("bookmarks")
         if bm is not None:
-            self.bookmarks = {k: (self.playlist[v] if v in self.playlist else None) for k, v in bm.items()}
+            self.bookmarks = {k: (self.playlist[v] if v in self.playlist else None) for k, v in bm.items() if not k.startswith("_")}
 
     def show_config(self) -> None:
         ConfigDialog(self).exec_()
