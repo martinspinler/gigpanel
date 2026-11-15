@@ -56,7 +56,7 @@ class LocalPlaylistClient(PlaylistClient):
                 path = pfx + store.get('path', '')
                 suffix = store.get('suffix', '.pdf')
                 for folder in sls['folders']:
-                    files = os.listdir(path + folder)
+                    files = sorted(os.listdir(path + folder))
                     for f in files:
                         if f.endswith(suffix):
                             song = Song(id=f, name=f[:-len(suffix)], store=sname, pattern=f'{folder}/{{name}}{suffix}')
