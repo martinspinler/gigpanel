@@ -184,8 +184,24 @@ class LocalPlaylistClient(PlaylistClient):
         for cb in self._cbs:
             cb.pe_update_playlist(list(self.playlist.values()))
 
-    #def playlist_item_move(self, si, pos) -> None:
-    #    pass
+    def playlist_item_move(self, si: PlaylistItemId, pos: int) -> None:
+        """Move playlist item ``si`` by ``pos`` places (negative = up)."""
+        keys = list(self.playlist.keys())
+        if si not in keys:
+            return
+        old = keys.index(si)
+        new = max(0, min(len(keys) - 1, old + pos))
+        if new == old:
+            return
+        keys.insert(new, keys.pop(old))
+
+        items = {k: self.playlist[k] for k in keys}
+        self.playlist.clear()  # keep the same dict object (shared with self.playlists[0])
+        for i, (k, v) in enumerate(items.items()):
+            v.pos = i
+            self.playlist[k] = v
+        for cb in self._cbs:
+            cb.pe_update_playlist(list(self.playlist.values()))
 
     def playlist_item_play(self, id: PlaylistItemId | None = None, off: int | None = None) -> None:
         self.playlist_item_set(id, off)
