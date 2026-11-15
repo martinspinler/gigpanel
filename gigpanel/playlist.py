@@ -28,6 +28,13 @@ class PlaylistClient():
     def show_config(self) -> None:
         pass
 
+    def can_save(self) -> bool:
+        """True if the client keeps the playlist locally and supports save()."""
+        return False
+
+    def save(self) -> None:
+        pass
+
     def add_callback(self, cb: PlaylistEventListener) -> None:
         self._cbs.append(cb)
 

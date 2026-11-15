@@ -2,7 +2,8 @@ import os
 from typing import Callable, Any, Optional
 
 
-from PyQt5.QtWidgets import QWidget, QListWidget, QListWidgetItem, QHBoxLayout, QVBoxLayout, QPushButton
+from PyQt5.QtCore import QTimer
+from PyQt5.QtWidgets import QWidget, QListWidget, QListWidgetItem, QHBoxLayout, QVBoxLayout, QPushButton, QMessageBox
 
 from . import SongListDialog
 
@@ -69,10 +70,11 @@ class PlaylistWidget(PlaylistEventListener, QWidget):
         #h.addLayout(l)
         #l = QVBoxLayout()
 
-        def addButton(text: str, cb: Callable[[QPushButton], Any]) -> None:
+        def addButton(text: str, cb: Callable[[QPushButton], Any]) -> QPushButton:
             btn = QPushButton(text)
             btn.clicked.connect(cb)
             layout.addWidget(btn)
+            return btn
 
         midibox_host = app.mb_cfg.get("backend-params", {}).get("addr", 'invalid')
         cmd = f'ssh -o ConnectTimeout=3 {midibox_host} -C sudo poweroff'
@@ -82,6 +84,8 @@ class PlaylistWidget(PlaylistEventListener, QWidget):
         addButton("Move down", lambda x: self.mv(+1))
         addButton("Delete", lambda x: self.delete())
         addButton("Add", self.add)
+        if self.app.pc.can_save():
+            self.btn_save = addButton("Save", lambda x: self.save())
         addButton("Prev", lambda x: self.app.pc.playlist_item_play(off=-1))
         addButton("Next", lambda x: self.app.pc.playlist_item_play(off=+1))
         addButton("Poweroff oscbox", lambda x: os.system(cmd))
@@ -115,6 +119,15 @@ class PlaylistWidget(PlaylistEventListener, QWidget):
         if d is not None:
             for si in d:
                 self.app.pc.playlist_item_add(si.song)
+
+    def save(self) -> None:
+        try:
+            self.app.pc.save()
+        except Exception as e:
+            QMessageBox.warning(self, "Save playlist", f"Saving playlist failed:\n{e}")
+            return
+        self.btn_save.setText("Saved")
+        QTimer.singleShot(1500, lambda: self.btn_save.setText("Save"))
 
     def delete(self) -> None:
         ci: Optional[QListWidgetItem] = self.playlist.currentItem()

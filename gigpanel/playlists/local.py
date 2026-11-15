@@ -1,3 +1,4 @@
+import re
 import yaml
 
 from typing import Any
@@ -126,10 +127,45 @@ class LocalPlaylistClient(PlaylistClient):
         await self.get_songlist()
         await self.get_playlist()
 
+    def can_save(self) -> bool:
+        return True
+
     def save(self) -> None:
-        with open(self._filename, 'w') as outfile:
-            self.db['playlists'][1]['songs'] = {p: {'id': v.id, 'song_id': v.song.id} for p, v in self.playlist.items()}
-            yaml.dump(self.db, outfile, allow_unicode=True)
+        """Store the current playlist back into the YAML db file.
+
+        Only the top-level ``playlists:`` section is rewritten; the rest of the
+        file (comments, songlist with duplicate keys, ...) is kept verbatim.
+        """
+        pkey = next(iter(self.db['playlists']))
+        self.db['playlists'][pkey]['songs'] = {
+            p: {'id': v.id, 'song_id': v.song.id} for p, v in self.playlist.items()
+        }
+        section = yaml.dump(
+            {'playlists': self.db['playlists']},
+            allow_unicode=True, sort_keys=False, default_flow_style=None,
+        )
+
+        with open(self._filename, 'r') as f:
+            lines = f.read().splitlines(keepends=True)
+
+        top_key = re.compile(r'^[^\s#]')
+        start = next((i for i, ln in enumerate(lines) if re.match(r'^playlists\s*:', ln)), None)
+        if start is None:
+            if lines and not lines[-1].endswith('\n'):
+                lines[-1] += '\n'
+            start = end = len(lines)
+            section = '\n' + section
+        else:
+            end = next((i for i in range(start + 1, len(lines)) if top_key.match(lines[i])), len(lines))
+            # keep trailing blank lines / column-0 comments that precede the next key
+            while end > start + 1 and (not lines[end - 1].strip() or lines[end - 1].startswith('#')):
+                end -= 1
+
+        content = ''.join(lines[:start]) + section + ''.join(lines[end:])
+        tmp = self._filename + '.tmp'
+        with open(tmp, 'w') as f:
+            f.write(content)
+        os.replace(tmp, self._filename)
 
     def disconnect(self) -> None:
         pass
