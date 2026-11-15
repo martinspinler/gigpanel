@@ -137,7 +137,9 @@ class SongListDialog(QDialog):
         del self.gp.ext_input_cb[-1]
 
         if self.result() == QDialog.Accepted:
-            return [x for x in self.songlist.selectedItems() if isinstance(x, SonglistItem)]
+            # selectedItems() is in selection order, not in list order
+            items = [x for x in self.songlist.selectedItems() if isinstance(x, SonglistItem)]
+            return sorted(items, key=self.songlist.row)
         else:
             return None
 
