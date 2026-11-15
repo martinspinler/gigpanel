@@ -2,6 +2,7 @@ from typing import Any, Optional
 
 from ..playlist import PlaylistClient
 from ..song import Song, PlaylistItem, PlaylistItemId
+from .localstore import resolve_local_file
 
 from livelist.client import AsyncLivelistClient
 from livelist.client.models import Song as LibSong, PlaylistItem as LibPlaylistItem
@@ -69,6 +70,12 @@ class SocketioLivelistPlaylistClient(PlaylistClient):
         # self._client.band_config); the prefix is machine-specific and
         # stays here so the gigpanel resolves files on its own disk.
         self._sheet_prefix: str = kwargs.get("sheet_store_prefix", "") or ""
+        # Local {stores, prefixes} config (same as LocalPlaylistClient). A song
+        # whose store (or the client's defaultStore) is defined locally is
+        # resolved from it first, e.g. one big PDF + per-song pages from meta.
+        self._stores: dict[str, Any] = kwargs.get("stores") or {}
+        self._prefixes: dict[str, str] = kwargs.get("prefixes") or {}
+        self._default_store: Optional[str] = kwargs.get("defaultStore")
         # Instrument the gigpanel auto-picks (no dialog), e.g. 'pno'.
         self._sheet_instrument: Optional[str] = kwargs.get("sheet_store_instrument")
         # Converted caches (project-model objects)
@@ -78,8 +85,15 @@ class SocketioLivelistPlaylistClient(PlaylistClient):
         self._client.register(_BridgeCallback(self))
 
     def resolve_song_file(self, song: Song, horizontal: bool = False) -> None:
-        """Resolve ``song.file`` via the shared finder using the server-fetched
-        band config + local prefix; pick the configured instrument."""
+        """Resolve ``song.file`` from the local store config if the song's
+        store (or defaultStore) is defined locally; otherwise via the shared
+        finder using the server-fetched band config + local prefix, picking
+        the configured instrument."""
+        local = resolve_local_file(song, self._stores, self._prefixes, self._default_store)
+        if local is not None:
+            song.file = local
+            return
+
         cfg = getattr(self._client, "band_config", None)
         if not cfg:
             song.file = None

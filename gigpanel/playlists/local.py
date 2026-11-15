@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton
 
 from ..playlist import PlaylistClient
 from ..song import Song, PlaylistItem, PlaylistItemId
+from .localstore import resolve_local_file
 
 
 class ConfigDialog(QDialog):
@@ -89,30 +90,7 @@ class LocalPlaylistClient(PlaylistClient):
         covers explicit songlist entries that omit a pattern. Orientation
         is ignored (LPC sheets have no -L/-P variants).
         """
-        st = song.store if song.store is not None else self._default_store
-        store = self._stores[st]
-        prefix = self._prefixes[store['prefix']]
-        suffix = store.get('suffix', '.pdf')
-        base = prefix + store.get('path', '')
-
-        pattern = song.pattern if song.pattern is not None else store.get('pattern')
-        if pattern is not None:
-            candidate = prefix + pattern.format(name=song.name, instrument='')
-            if os.path.isfile(candidate):
-                song.file = candidate
-                return
-
-        for name in (song.filename, song.name):
-            if not name:
-                continue
-            candidate = base + name
-            if not candidate.endswith(suffix):
-                candidate += suffix
-            if os.path.isfile(candidate):
-                song.file = candidate
-                return
-
-        song.file = None
+        song.file = resolve_local_file(song, self._stores, self._prefixes, self._default_store)
 
     @classmethod
     def to_yaml(cls, dumper: yaml.Dumper, data: Any) -> Any:
