@@ -7,9 +7,9 @@ from .widgets import DocumentWidget, DocumentWidgetScrollArea
 from .widgets import PlaylistWidget
 from .widgets import HidableTabPanel, TabTempoWidget, TempoWidget, TabBookmarksWidget
 
-from PyQt5.QtWidgets import QWidget, QMainWindow, QVBoxLayout, QStackedLayout, QDockWidget
+from PyQt5.QtWidgets import QWidget, QMainWindow, QVBoxLayout, QStackedLayout, QDockWidget, QShortcut
 from PyQt5.QtCore import Qt, QPoint, QSize, QRect
-from PyQt5.QtGui import QCloseEvent
+from PyQt5.QtGui import QCloseEvent, QKeySequence
 
 from PyQt5.QtCore import QSettings
 
@@ -218,6 +218,17 @@ class GigPanelWindow(QMainWindow):
 
         self.tab_tempo.btn_next.clicked.connect(lambda x: app.pc.playlist_item_play(off=+1))
         self.tab_bookmarks.btn_next.clicked.connect(lambda x: app.pc.playlist_item_play(off=+1))
+
+        # Page turning from keyboard (e.g. page-turner pedals emulating keys).
+        # Window-level shortcuts take precedence over focused buttons/lists,
+        # but text inputs still get their keys via ShortcutOverride.
+        doc = self.gp.document
+        for key, action in (
+            (Qt.Key_Space, doc.next_page),
+            (Qt.Key_Right, doc.next_page),
+            (Qt.Key_Left, doc.prev_page),
+        ):
+            QShortcut(QKeySequence(key), self, activated=action)
 
     def onGeometryChanged(self, geometry: QRect) -> None:
         orientation_changed = set_style(self.app, geometry)
