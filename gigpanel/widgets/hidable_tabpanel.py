@@ -1,82 +1,80 @@
-from typing import Any
-from PyQt5.QtWidgets import QWidget, QGridLayout, QSizePolicy, QScrollArea, QAbstractScrollArea, QTabBar
-
-from PyQt5.QtCore import QPropertyAnimation, QParallelAnimationGroup
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSizePolicy, QTabBar, QWIDGETSIZE_MAX
+from PyQt5.QtCore import QVariantAnimation, QAbstractAnimation
 
 
-class HidableTabWidget(QScrollArea):
-    def __init__(self, widget: QWidget) -> None:
+class _PageArea(QWidget):
+    """Holds the pages, only the current one is visible.
+
+    Hidden widgets don't take part in a layout, so the size hint of this
+    area is always the live size hint of the current page. With a Fixed
+    vertical policy the panel therefore sits at the lowest height the page
+    needs and follows it when the page content changes.
+    """
+
+    def __init__(self) -> None:
         super().__init__()
-
-        contentArea = self
-        contentArea.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        #contentArea.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        contentArea.setMaximumHeight(0)
-        contentArea.setMinimumHeight(0)
-        contentArea.setWidget(widget)
-
-        contentArea.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
-        contentArea.setWidgetResizable(True)
-
-        toggleAnimation = QParallelAnimationGroup()
-        toggleAnimation.addAnimation(QPropertyAnimation(contentArea, b"maximumHeight"))
-
-        self.contentArea = contentArea
-        self.toggleAnimation = toggleAnimation
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
 
 class HidableTabPanel(QWidget):
+    """Tab bar with pages below it; switching tabs animates the height."""
+
+    ANIMATION_MS = 100
+
     def __init__(self, title: str = "") -> None:
         QWidget.__init__(self)
+        # Fixed vertically, so the dock can't be dragged taller than the page.
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
-        tabBar = QTabBar()
+        self.tb = QTabBar()
+        self.area = _PageArea()
+        self.pages: list[QWidget] = []
 
-        self.mainLayout = QGridLayout()
-        self.mainLayout.setVerticalSpacing(0)
-        self.mainLayout.setContentsMargins(0, 0, 0, 0)
-        self.mainLayout.addWidget(tabBar, 0, 0, 1, 2)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self.tb)
+        layout.addWidget(self.area)
 
-        self.setLayout(self.mainLayout)
-        self.tb = tabBar
+        # One animation for all switches: a new switch just restarts it from
+        # the current height, so quick switching can't leave stale state.
+        self.anim = QVariantAnimation(self)
+        self.anim.setDuration(self.ANIMATION_MS)
+        self.anim.valueChanged.connect(lambda h: self.area.setFixedHeight(int(h)))
+        self.anim.finished.connect(self._release_height)
 
-        self.ci = 0
-        self.content: list[HidableTabWidget] = []
-
-        tabBar.currentChanged.connect(self.on_tab_changed)
+        self.tb.currentChanged.connect(self.on_tab_changed)
 
     def addTab(self, name: str, widget: QWidget) -> None:
+        self.pages.append(widget)
+        self.area.layout().addWidget(widget)
+        widget.setVisible(len(self.pages) - 1 == self.tb.currentIndex() or not self.tb.count())
         self.tb.addTab(name)
-        w = HidableTabWidget(widget)
 
-        self.content.append(w)
-        self.mainLayout.addWidget(w, len(self.content), 0, 1, 2)
-
-        if len(self.content) == 1:
-            self.on_tab_changed(0)
-
-    def _animate(self, animation: Any, startHeight: int, endHeight: int) -> None:
-        animationDuration = 100
-        for i in range(animation.animationCount() - 1):
-            SectionAnimation = animation.animationAt(i)
-            SectionAnimation.setDuration(animationDuration)
-            SectionAnimation.setStartValue(startHeight)
-            SectionAnimation.setEndValue(endHeight)
-
-        contentAnimation = animation.animationAt(animation.animationCount() - 1)
-        contentAnimation.setDuration(animationDuration)
-        contentAnimation.setStartValue(startHeight)
-        contentAnimation.setEndValue(endHeight)
-        animation.start()
+    def _release_height(self) -> None:
+        # Back to layout-driven height (the current page's size hint).
+        self.area.setMinimumHeight(0)
+        self.area.setMaximumHeight(QWIDGETSIZE_MAX)
 
     def on_tab_changed(self, index: int) -> None:
-        if not self.content:
+        if not (0 <= index < len(self.pages)):
             return
 
-        wstart = self.content[self.ci]
-        wend = self.content[index]
+        start = self.area.height()
+        self.anim.stop()
+        for i, page in enumerate(self.pages):
+            page.setVisible(i == index)
+        end = self.area.sizeHint().height()
 
-        self.ci = index
+        if not self.isVisible() or start == end:
+            self._release_height()
+            return
 
-        h = wend.sizeHint().height()
-        self._animate(wstart.toggleAnimation, wstart.maximumHeight(), 0)
-        self._animate(wend.toggleAnimation, 0, h)
+        # Pin the current height first so the page swap doesn't jump.
+        self.area.setFixedHeight(start)
+        self.anim.setStartValue(start)
+        self.anim.setEndValue(end)
+        self.anim.start(QAbstractAnimation.KeepWhenStopped)

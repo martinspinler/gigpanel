@@ -1,7 +1,7 @@
 from .docwidget import DocumentWidgetScrollArea, DocumentWidget
 from .songlist import SongListDialog
 from .playlist import PlaylistWidget
-from .hidable_tabpanel import HidableTabWidget, HidableTabPanel
+from .hidable_tabpanel import HidableTabPanel
 from .tempo import TempoWidget, TabTempoWidget
 from .bookmarks import BookmarksWidget, TabBookmarksWidget
 from .clientselect import PlaylistClientDialog
@@ -12,7 +12,6 @@ __all__ = [
     "SongListDialog",
     "PlaylistWidget",
     "HidableTabPanel",
-    "HidableTabWidget",
     "TempoWidget",
     "TabTempoWidget",
     "BookmarksWidget",
