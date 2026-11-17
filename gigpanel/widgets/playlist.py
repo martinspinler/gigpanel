@@ -79,6 +79,7 @@ class PlaylistWidget(PlaylistEventListener, QWidget):
         midibox_host = app.mb_cfg.get("backend-params", {}).get("addr", 'invalid')
         cmd = f'ssh -o ConnectTimeout=3 {midibox_host} -C sudo poweroff'
         addButton("Playlist config", lambda x: self.app.pc.show_config())
+        addButton("Switch client", lambda x: self.gpwindow.select_playlist_client())
         #addButton("Poweroff oscbox", lambda x: self.app.oc.send_message("/poweroff", None))
         addButton("Move up", lambda x: self.mv(-1))
         addButton("Move down", lambda x: self.mv(+1))

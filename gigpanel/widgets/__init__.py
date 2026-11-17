@@ -4,6 +4,7 @@ from .playlist import PlaylistWidget
 from .hidable_tabpanel import HidableTabWidget, HidableTabPanel
 from .tempo import TempoWidget, TabTempoWidget
 from .bookmarks import BookmarksWidget, TabBookmarksWidget
+from .clientselect import PlaylistClientDialog
 
 __all__ = [
     "DocumentWidgetScrollArea",
@@ -16,4 +17,5 @@ __all__ = [
     "TabTempoWidget",
     "BookmarksWidget",
     "TabBookmarksWidget",
+    "PlaylistClientDialog",
 ]

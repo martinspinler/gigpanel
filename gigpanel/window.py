@@ -1,4 +1,6 @@
-from typing import Callable, Any
+import os
+import sys
+from typing import Callable, Any, Optional
 
 import mido
 
@@ -6,8 +8,9 @@ from .app import Application
 from .widgets import DocumentWidget, DocumentWidgetScrollArea
 from .widgets import PlaylistWidget
 from .widgets import HidableTabPanel, TabTempoWidget, TempoWidget, TabBookmarksWidget
+from .widgets import PlaylistClientDialog
 
-from PyQt5.QtWidgets import QWidget, QMainWindow, QVBoxLayout, QStackedLayout, QDockWidget, QShortcut
+from PyQt5.QtWidgets import QWidget, QMainWindow, QVBoxLayout, QStackedLayout, QDockWidget, QShortcut, QMessageBox
 from PyQt5.QtCore import Qt, QPoint, QSize, QRect
 from PyQt5.QtGui import QCloseEvent, QKeySequence
 
@@ -34,6 +37,8 @@ def set_style(app: Application, geometry: QRect) -> bool:
         style.append(f"QListWidget {{font: {font_size};}}")
         style.append("QScrollBar::vertical {min-width: 2em;}")
         style.append(f"QTabBar {{font: {font_size};}}")
+        style.append(f"QComboBox {{font: {font_size};}}")
+        style.append(f"QDialog QLabel {{font: {font_size};}}")
 
     style.append(f".tempoButton{{background-color: yellow; font: {font_size};}}")
     style.append(".tempoButton:checked{background-color: blue;}")
@@ -154,6 +159,22 @@ class GigPanelWidget(PlaylistEventListener, QWidget):
 #        #self.loadSongs()
 
 
+def _strip_args(argv: list[str], short: str, long: str) -> list[str]:
+    """Remove all occurrences of an option taking a value from argv."""
+    out = []
+    skip = False
+    for a in argv:
+        if skip:
+            skip = False
+        elif a in (short, long):
+            skip = True
+        elif a.startswith(long + "=") or (a.startswith(short) and not a.startswith("--") and len(a) > len(short)):
+            pass
+        else:
+            out.append(a)
+    return out
+
+
 class GigPanelWindow(QMainWindow):
     def __init__(self, pcConfig: dict[str, Any], app: Application) -> None:
         QMainWindow.__init__(self)
@@ -258,6 +279,44 @@ class GigPanelWindow(QMainWindow):
             settings.setValue("geometry", self.saveGeometry())
         #settings.setValue("windowState", self.saveState())
         super().closeEvent(event)
+
+    def select_playlist_client(self) -> None:
+        res = PlaylistClientDialog(self, self.app).get()
+        if res is None:
+            return
+        name, instrument = res
+        if name == self.app.pc_name and (instrument is None or instrument == self.app.pc_instrument):
+            return
+        self.restart_with_playlist_client(name, instrument)
+
+    def restart_with_playlist_client(self, name: str, instrument: Optional[str]) -> None:
+        """Re-exec gigpanel with another playlist client / instrument.
+
+        The window is wired to one client in many places (callbacks, panel
+        type, save button, midibox widget URL), so a clean restart is the
+        robust way to switch. Other command line options are kept.
+        """
+        argv = _strip_args(sys.argv[1:], "-p", "--playlist_client")
+        argv = _strip_args(argv, "-i", "--instrument")
+        argv += ["-p", name]
+        if instrument:
+            argv += ["-i", instrument]
+
+        settings = QSettings("cz.spinler", "gigpanel")
+        if not self.app.appconfig.args.fullscreen:
+            settings.setValue("geometry", self.saveGeometry())
+        settings.sync()
+
+        for disconnect in (self.app.pc.disconnect, self.app.midibox.disconnect):
+            try:
+                disconnect()
+            except Exception:
+                pass
+
+        try:
+            os.execv(sys.executable, [sys.executable, "-m", "gigpanel"] + argv)
+        except OSError as e:
+            QMessageBox.warning(self, "Playlist client", f"Restart failed:\n{e}")
 
     def dwSetVisible(self, v: bool, index: int = 1) -> None:
         self.hw.tb.setCurrentIndex(index if v else 0)

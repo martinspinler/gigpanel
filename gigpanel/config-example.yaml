@@ -22,6 +22,10 @@ defaultPlaylistClient: mygreatband
 # selects which instrument the gigpanel auto-picks (no dialog).
 sheet_store_prefix: ''
 sheet_store_instrument: 'pno'
+# Optional: instruments offered in the "Switch client" dialog (it also lists
+# those from the server band config of the running client). May also be set
+# per playlistClient, together with a per-client sheet_store_instrument.
+#instruments: [pno, bass, gtr]
 
 playlistClients:
   mygreatband:
