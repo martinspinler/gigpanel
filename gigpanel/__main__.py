@@ -7,6 +7,8 @@ import signal
 import yaml
 import qasync
 import argparse
+import subprocess
+import time
 
 try:
     import platformdirs as _platformdirs
@@ -134,8 +136,32 @@ async def amain() -> None:
         pass
 
 
+def wait_for_xft_dpi(timeout: float = 3.0) -> None:
+    """Wait until X resources contain Xft.dpi (HiDPI scale for X clients).
+
+    In a fresh GNOME session Xwayland is started on demand by the first X
+    client and gsd-xsettings publishes Xft.dpi only afterwards. Qt5 (xcb)
+    reads the DPI once at startup, so the first launch would come up at
+    96 DPI with tiny fonts. Querying xrdb also triggers the Xwayland start.
+    """
+    if not os.environ.get("DISPLAY"):
+        return
+    if os.environ.get("QT_QPA_PLATFORM", "xcb").split(":")[0] != "xcb":
+        return
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            out = subprocess.run(["xrdb", "-query"], capture_output=True, text=True, timeout=timeout).stdout
+        except (OSError, subprocess.SubprocessError):
+            return
+        if "Xft.dpi" in out or time.monotonic() >= deadline:
+            return
+        time.sleep(0.1)
+
+
 def main() -> None:
     signal.signal(signal.SIGINT, signal.SIG_DFL)
+    wait_for_xft_dpi()
     try:
         if hasattr(qasync, '_set_event_loop_policy'):
             with qasync._set_event_loop_policy(qasync.DefaultQEventLoopPolicy()):
