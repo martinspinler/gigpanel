@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 import json
-from typing import Optional, Callable
+from typing import Any, Optional, Callable
 
 from PyQt5.QtWidgets import QLabel, QScrollArea, QAbstractScrollArea
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QMouseEvent, QResizeEvent
-from PyQt5.QtCore import Qt, QPoint, QRect, QSize
+from PyQt5.QtCore import Qt, QPoint, QRect, QSize, QTimer
 
 
 from ..song import Song, PlaylistItem
@@ -45,6 +45,18 @@ class DocumentWidget(QLabel):
 
         self._click_callback: Optional[Callable[[QPoint, QSize], bool]] = None
 
+        # Rendered (cropped) page, independent of the widget size: a resize
+        # only rescales it instead of rendering the PDF page again.
+        # Key: (document, page index, split index).
+        self._page_cache: Optional[tuple[Any, int, int, QPixmap]] = None
+
+        # While resizing (e.g. the tab panel animation) scale fast, then do
+        # one smooth scale once the size settles.
+        self._smooth_timer = QTimer(self)
+        self._smooth_timer.setSingleShot(True)
+        self._smooth_timer.setInterval(150)
+        self._smooth_timer.timeout.connect(lambda: self.loadPage(self.page_index))
+
     def loadSong(self, pli: PlaylistItem) -> None:
         self.pli = pli
         song = pli.song
@@ -55,6 +67,7 @@ class DocumentWidget(QLabel):
 
         self.page = None
         self.page_splitindex = 0
+        self._page_cache = None
         self.document = doc.load(song.file)
         if not self.document:
             return
@@ -130,7 +143,7 @@ class DocumentWidget(QLabel):
                 else:
                     self.prev_page()
 
-    def loadPage(self, index: int) -> None:
+    def loadPage(self, index: int, fast: bool = False) -> None:
         if not self.document:
             return
 
@@ -171,32 +184,17 @@ class DocumentWidget(QLabel):
         yfrom = int(yfrom * mult)
         yto = int(yto * mult)
 
-        dpi = int(72 * mult)
-        img = self.page.renderToImage(dpi, dpi, 0, yfrom, ps.width(), yto)
-
-        if True: # and np is not None:
-            rect_orig = get_bounding_box(img)
-            #rect_orig = img.rect()
-            n = 20
-            arect = [-n, -n, 2*n, 2*n]
-            rect = rect_orig.adjusted(*arect)
-        elif self.page_boundingbox and self.mode == self.MODE_NORMAL:
-            p1 = QPoint(*self.page_boundingbox[0:2])
-            p2 = QPoint(*self.page_boundingbox[2:4])
-            rect = QRect(p1 * mult, p2 * mult)
-            img = img.copy(rect)
-
-        pm2 = QPixmap(rect.size())
-        pm2.fill()
-        p = QPainter(pm2)
-        #p.drawPixmap(rect_orig.topLeft() - rect.topLeft(), pixmap)
-        p.drawImage(n, n, img, rect.left(), rect.top())
-        #rect.topLeft() - rect_orig.topLeft()
-        p.end()
+        pc = self._page_cache
+        if pc is not None and pc[0] is self.document and pc[1:3] == (index, si):
+            pm2 = pc[3]
+        else:
+            pm2 = self._render_page(yfrom, yto, ps, mult)
+            self._page_cache = (self.document, index, si, pm2)
 
         #img2 = img.scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
         #pixmap = QPixmap.fromImage(img2)
-        pixmap = pm2.scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        transform = Qt.FastTransformation if fast else Qt.SmoothTransformation
+        pixmap = pm2.scaled(self.size(), Qt.KeepAspectRatio, transform)
 
         if self.mode == self.MODE_SET_SPLITPOINTS:
             p = QPainter(pixmap)
@@ -225,6 +223,32 @@ class DocumentWidget(QLabel):
         #self.show_beats(pixmap, "/home/maestro/mstest/test.json", img2)
 
         self.setPixmap(pixmap)
+
+    def _render_page(self, yfrom: int, yto: int, ps: Any, mult: float) -> QPixmap:
+        assert self.page is not None
+        dpi = int(72 * mult)
+        img = self.page.renderToImage(dpi, dpi, 0, yfrom, ps.width(), yto)
+
+        if True: # and np is not None:
+            rect_orig = get_bounding_box(img)
+            #rect_orig = img.rect()
+            n = 20
+            arect = [-n, -n, 2*n, 2*n]
+            rect = rect_orig.adjusted(*arect)
+        elif self.page_boundingbox and self.mode == self.MODE_NORMAL:
+            p1 = QPoint(*self.page_boundingbox[0:2])
+            p2 = QPoint(*self.page_boundingbox[2:4])
+            rect = QRect(p1 * mult, p2 * mult)
+            img = img.copy(rect)
+
+        pm2 = QPixmap(rect.size())
+        pm2.fill()
+        p = QPainter(pm2)
+        #p.drawPixmap(rect_orig.topLeft() - rect.topLeft(), pixmap)
+        p.drawImage(n, n, img, rect.left(), rect.top())
+        #rect.topLeft() - rect_orig.topLeft()
+        p.end()
+        return pm2
 
     def show_beats(self, pixmap: QPixmap, filename: str, img2: QImage) -> None:
         x = json.load(open(filename))
@@ -257,7 +281,8 @@ class DocumentWidget(QLabel):
 
     def onResize(self, re: QSize) -> None:
         self.setFixedSize(re)
-        self.loadPage(self.page_index)
+        self.loadPage(self.page_index, fast=True)
+        self._smooth_timer.start()
 
     def next_page(self) -> None:
         self.page_splitindex = 0
