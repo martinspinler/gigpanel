@@ -1,21 +1,9 @@
 import os
-import string
 from typing import Any, Optional
 
+from livelist.songfind import format_pattern
+
 from ..song import Song
-
-
-def format_pattern(pattern: str, **fields: Any) -> Optional[str]:
-    """Format a store pattern, e.g. ``'{user_id} {name}.pdf'``.
-
-    Returns None when the pattern uses a field that is missing (None) for
-    this song (e.g. ``{user_id}`` of a song without one), so such a pattern
-    is skipped instead of producing a bogus path or raising KeyError.
-    """
-    for _, field, _, _ in string.Formatter().parse(pattern):
-        if field and fields.get(field) is None:
-            return None
-    return pattern.format(**fields)
 
 
 def resolve_local_file(

@@ -100,7 +100,8 @@ class SocketioLivelistPlaylistClient(PlaylistClient):
             return
         store = build_store(cfg, self._sheet_prefix)
         orientation = 'L' if horizontal else 'P'
-        documents = find_documents(_name_candidates(song), store, orientation=orientation)
+        documents = find_documents(_name_candidates(song), store, orientation=orientation,
+                                   fields={'user_id': song.user_id or None})
         doc = pick_best_for_instrument(documents, self._sheet_instrument)
         song.file = (store.prefix + doc['path']) if doc is not None else None
 
