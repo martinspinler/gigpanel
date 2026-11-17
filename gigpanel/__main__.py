@@ -47,6 +47,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("-m", "--midibox", help="Midibox configuration in config file")
     parser.add_argument("-f", "--fullscreen", help="Show in fullscreen mode", action='store_true')
     parser.add_argument("-p", "--playlist_client", help="Playlist client", default=None)
+    parser.add_argument("-i", "--instrument", help="Sheet instrument (overrides sheet_store_instrument)", default=None)
     parser.add_argument("--edit_splitpoints", help="Edit splitpoints", action='store_true')
     parser.add_argument("--edit-bounding-box", help="Edit bounding box", action='store_true')
     parser.add_argument("qt", nargs='*')
@@ -99,22 +100,26 @@ async def amain() -> None:
     # Playlist setup
     defaultPC = ac.args.playlist_client or cfg['defaultPlaylistClient']
     cfg_pc = cfg['playlistClients'].get(defaultPC, {})
+    app.pc_name = defaultPC
     playlist_client_class = {
         "socketiolivelist": SocketioLivelistPlaylistClient,
         "local": LocalPlaylistClient,
     }.get(cfg_pc.get("pc_type"), SocketioLivelistPlaylistClient)
 
     # sheet_store_* may be set globally or per-playlistClient (per-band local
-    # prefix/instrument). Let the per-client value override the global one.
-    pc_overrides = {k: cfg_pc[k] for k in ('sheet_store_prefix', 'sheet_store_instrument') if k in cfg_pc}
-    app.pc = playlist_client_class(
-        **{k: v for k, v in cfg_pc.items() if k not in ('sheet_store_prefix', 'sheet_store_instrument')},
-        stores=cfg.get('stores'),
-        prefixes=cfg.get('prefixes'),
-        sheet_store_prefix=cfg.get('sheet_store_prefix', ''),
-        sheet_store_instrument=cfg.get('sheet_store_instrument'),
-        **pc_overrides,
-    )
+    # prefix/instrument). The per-client value overrides the global one and
+    # the -i/--instrument command line option overrides both.
+    pc_kwargs = {
+        'stores': cfg.get('stores'),
+        'prefixes': cfg.get('prefixes'),
+        'sheet_store_prefix': cfg.get('sheet_store_prefix', ''),
+        'sheet_store_instrument': cfg.get('sheet_store_instrument'),
+    }
+    pc_kwargs.update(cfg_pc)
+    if ac.args.instrument:
+        pc_kwargs['sheet_store_instrument'] = ac.args.instrument
+    app.pc = playlist_client_class(**pc_kwargs)
+    app.pc_instrument = pc_kwargs['sheet_store_instrument']
 
     gpwindow = GigPanelWindow(cfg_pc, app)
     gpwindow.show()
