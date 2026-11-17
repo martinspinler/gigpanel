@@ -43,6 +43,7 @@ class LocalPlaylistClient(PlaylistClient):
                 name=s['name'],
                 store=(s['store'] if 'store' in s else self._default_store),
                 filename=s.get('filename'),
+                user_id=str(s['user_id']) if s.get('user_id') is not None else None,
                 pages=[p-1 for p in s['pages']] if 'pages' in s else None,
             ) for k, s in self.db['songlist'].items()
         }

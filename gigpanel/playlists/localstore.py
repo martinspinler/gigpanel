@@ -1,7 +1,21 @@
 import os
+import string
 from typing import Any, Optional
 
 from ..song import Song
+
+
+def format_pattern(pattern: str, **fields: Any) -> Optional[str]:
+    """Format a store pattern, e.g. ``'{user_id} {name}.pdf'``.
+
+    Returns None when the pattern uses a field that is missing (None) for
+    this song (e.g. ``{user_id}`` of a song without one), so such a pattern
+    is skipped instead of producing a bogus path or raising KeyError.
+    """
+    for _, field, _, _ in string.Formatter().parse(pattern):
+        if field and fields.get(field) is None:
+            return None
+    return pattern.format(**fields)
 
 
 def resolve_local_file(
@@ -13,8 +27,8 @@ def resolve_local_file(
     """Resolve a song's sheet file from the local {stores, prefixes} config.
 
     The store is ``song.store`` (if defined locally) or ``default_store``. If the store (or the
-    song) has a ``pattern``, it is formatted with the song name and prefixed
-    with the store prefix; a pattern without ``{name}`` names one shared file
+    song) has a ``pattern``, it is formatted with the song name (``{name}``)
+    and ``{user_id}`` and prefixed with the store prefix; a pattern without ``{name}`` names one shared file
     (e.g. a single PDF with all songs, paired with per-song ``pages``).
     Then ``prefix + path + (filename | name) + suffix`` is tried.
     Returns the existing file path, or None.
@@ -35,7 +49,10 @@ def resolve_local_file(
         for name in (song.filename, song.name):
             if not name:
                 continue
-            candidate = prefix + pattern.format(name=name, instrument='')
+            formatted = format_pattern(pattern, name=name, user_id=song.user_id or None, instrument='')
+            if formatted is None:
+                continue
+            candidate = prefix + formatted
             if os.path.isfile(candidate):
                 return candidate
 
