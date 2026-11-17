@@ -9,7 +9,17 @@ stores:
   arrangements:
     prefix: cloud
     path: 'band/scores/'
-    pattern: 'band/scores/{name}/{name}{instrument}.pdf'
+    # Tried in order before the path + name + suffix fallback. Placeholders:
+    # {name}, {instrument} (instrument filename suffix, e.g. '-Drums', from
+    # the server band config for the livelist client, empty otherwise),
+    # {instrument_id} (the selected instrument, e.g. 'drums'; also usable in
+    # 'path') and {user_id}. A pattern using {user_id} / {instrument_id} is
+    # skipped when the song has no user_id / no instrument is selected.
+    # A single 'pattern: ...' also works; an entry may also be a dict in the
+    # server format {pattern, render, label, instr}.
+    patterns:
+      - 'band/scores/{name}/{user_id} {name}{instrument}.pdf'
+      - 'band/scores/{name}/{name}{instrument}.pdf'
     suffix: '.pdf'
 
 defaultStore: arrangements

@@ -89,17 +89,22 @@ class SocketioLivelistPlaylistClient(PlaylistClient):
         store (or defaultStore) is defined locally; otherwise via the shared
         finder using the server-fetched band config + local prefix, picking
         the configured instrument."""
-        local = resolve_local_file(song, self._stores, self._prefixes, self._default_store)
+        cfg = getattr(self._client, "band_config", None)
+        orientation = 'L' if horizontal else 'P'
+
+        # Local store patterns get the server's instrument suffixes, so
+        # {instrument} picks the configured instrument like server patterns.
+        local = resolve_local_file(song, self._stores, self._prefixes, self._default_store,
+                                   instruments=(cfg or {}).get('instruments'),
+                                   instrument=self._sheet_instrument, orientation=orientation)
         if local is not None:
             song.file = local
             return
 
-        cfg = getattr(self._client, "band_config", None)
         if not cfg:
             song.file = None
             return
         store = build_store(cfg, self._sheet_prefix)
-        orientation = 'L' if horizontal else 'P'
         documents = find_documents(_name_candidates(song), store, orientation=orientation,
                                    fields={'user_id': song.user_id or None})
         doc = pick_best_for_instrument(documents, self._sheet_instrument)
